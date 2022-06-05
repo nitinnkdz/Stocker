@@ -88,6 +88,7 @@ plotly==5.4.0
 pmdarima==1.8.4
 prometheus-client==0.12.0
 prompt-toolkit==3.0.23
+pystan==2.19.1.1
 prophet
 protobuf==3.19.1
 psaw==0.1.0
@@ -103,7 +104,6 @@ pyOpenSSL
 pyparsing
 pyrsistent==0.18.0
 PySocks
-pystan==2.19.1.1
 python-dateutil
 pytz
 pytz-deprecation-shim==0.1.0.post0
