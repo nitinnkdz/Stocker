@@ -107,7 +107,6 @@ pystan==2.19.1.1
 python-dateutil
 pytz
 pytz-deprecation-shim==0.1.0.post0
-pywinpty==1.1.6
 pyzmq==22.3.0
 redis==4.0.2
 regex==2022.4.24
