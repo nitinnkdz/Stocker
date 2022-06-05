@@ -1,0 +1,16 @@
+cython
+pystan==2.19.1.1
+cryptocmd==0.6.0
+cufflinks==0.17.3
+fbprophet==0.7.1
+matplotlib 
+matplotlib-inline==0.1.2
+numpy 
+pandas 
+plotly==5.1.0
+redis==3.5.3
+requests==2.25.1
+streamlit==0.84.0
+tablib==3.0.0
+tweepy==3.10.0
+yfinance==0.1.62
