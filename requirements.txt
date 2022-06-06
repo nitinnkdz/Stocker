@@ -115,8 +115,7 @@ scikit-learn==1.0.1
 scipy
 seaborn >= 0.11.2
 sklearn
-pystan==2.19.1.1
-fbprophet == 0.7.1
+prophet
 semver==2.13.0
 Send2Trash==1.8.0
 setuptools-git==1.2
