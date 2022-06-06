@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import tweepy
 import config
-from prophet import Prophet
-from prophet.plot import plot_plotly
+from fbprophet import Prophet
+from fbprophet.plot import plot_plotly
 from plotly import graph_objs as go
 import plotly.express as px
 from urllib.request import urlopen, Request
