@@ -34,7 +34,6 @@ Deprecated==1.2.13
 entrypoints==0.3
 ephem==4.1.2
 fonttools
-flake8 >= 4.0.1
 gitdb==4.0.9
 GitPython==3.1.24
 hijri-converter
