@@ -1,4 +1,5 @@
 altair==4.1.0
+gcc
 argon2-cffi==21.1.0
 arviz
 astor==0.8.1
