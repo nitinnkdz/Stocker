@@ -106,6 +106,18 @@ if Dashboard == 'Information':
 
     st.header('**Ticker data**')
     st.write(tickerDf)
+    
+    st.header('Major Holders')
+    major_holders = tickerData.major_holders
+    st._arrow_table(major_holders)
+
+    st.header('Institutional Holders')
+    institutional_holders = tickerData.institutional_holders
+    st._arrow_table(institutional_holders)
+
+    st.header('Mutual Funds Holders')
+    mf_holders = tickerData.mutualfund_holders
+    st._arrow_table(mf_holders)
 
     # Bollinger bands
     st.header('**Bollinger Bands**')
@@ -115,9 +127,22 @@ if Dashboard == 'Information':
     st.plotly_chart(fig)
 
 if Dashboard == 'News & Analysis':
-    selected1 = option_menu(None, ["News", "Analysis of News", ],
+  selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News", ],
                             menu_icon="cast", default_index=0, orientation="horizontal")
-    if selected1 == 'News':
+
+    if selected1 == 'Market Crunch':
+        finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
+        news = finnhub_client.general_news('general', min_id=0)
+        for news in news:
+            st.header(news['headline'])
+            st.write(news['category'])
+            posix_time = (news['datetime'])
+            st.text(datetime.utcfromtimestamp(posix_time).strftime('%Y-%m-%dT%H:%M:%SZ'))
+            st.image(news['image'])
+            st.markdown(news['summary'])
+            st.write(news['url'])
+
+    if selected1 == 'Ticker-News':
         nsymbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
         url = f"https://api.polygon.io/v2/reference/news?limit=100&sort=published_utc&ticker={nsymbol}&published_utc.gte=2021-04-26&apiKey=l7CZdzU2ElYhYaDCj5QQeyVUxMgr7UPZ"
         r = requests.get(url)
