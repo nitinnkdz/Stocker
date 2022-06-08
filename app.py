@@ -127,9 +127,8 @@ if Dashboard == 'Information':
     st.plotly_chart(fig)
 
 if Dashboard == 'News & Analysis':
-  selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News", ],
+   selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News", ],
                             menu_icon="cast", default_index=0, orientation="horizontal")
-
     if selected1 == 'Market Crunch':
         finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
         news = finnhub_client.general_news('general', min_id=0)
