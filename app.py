@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import tweepy
 import config
+import finnhub
 from fbprophet import Prophet
 from fbprophet.plot import plot_plotly
 from plotly import graph_objs as go
