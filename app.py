@@ -127,8 +127,9 @@ if Dashboard == 'Information':
     st.plotly_chart(fig)
 
 if Dashboard == 'News & Analysis':
-   selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News", ],
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News", ],
                             menu_icon="cast", default_index=0, orientation="horizontal")
+
     if selected1 == 'Market Crunch':
         finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
         news = finnhub_client.general_news('general', min_id=0)
@@ -277,24 +278,6 @@ if Dashboard == 'News & Analysis':
         </style>
         """
         st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-if Dashboard == 'Twitter':
-    for username in config.TWITTER_USERNAMES:
-        user = api.get_user(username)
-        tweets = api.user_timeline(username)
-
-        st.subheader(username)
-        st.image(user.profile_image_url)
-
-        for tweet in tweets:
-            if '$' in tweet.text:
-                words = tweet.text.split(' ')
-                for word in words:
-                    if word.startswith('$') and word[1:].isalpha():
-                        symbol = word[1:]
-                        st.write(symbol)
-                        st.write(tweet.text)
-                        st.image(f"https://finviz.com/chart.ashx?t={symbol}")
 
 if Dashboard == 'Overview':
     st.markdown("This application allows you to examine Fundamentals, Market News, and Investor Sentiment.This application\
