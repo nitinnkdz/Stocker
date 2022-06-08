@@ -279,6 +279,25 @@ if Dashboard == 'News & Analysis':
         """
         st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+if Dashboard == 'Twitter':
+    for username in config.screenname:
+        user = api.get_user(username)
+        tweets = api.user_timeline(username)
+
+        st.subheader(username)
+        st.image(user.profile_image_url)
+
+        for tweet in tweets:
+            if '$' in tweet.text:
+                words = tweet.text.split(' ')
+                for word in words:
+                    if word.startswith('$') and word[1:].isalpha():
+                        symbol = word[1:]
+                        st.write(symbol)
+                        st.write(tweet.text)
+                        st.image(f"https://finviz.com/chart.ashx?t={symbol}")        
+        
+        
 if Dashboard == 'Overview':
     st.markdown("This application allows you to examine Fundamentals, Market News, and Investor Sentiment.This application\
                 can provide you with a variety of stock-related information, as well as forecast the future value of any\
