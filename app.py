@@ -6,7 +6,7 @@ import numpy as np
 import tweepy
 import config
 import finnhub
-from prophet import Prophet
+from fbprophet import Prophet
 from prophet.plot import plot_plotly
 from plotly import graph_objs as go
 import plotly.express as px
