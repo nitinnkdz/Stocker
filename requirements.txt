@@ -4,6 +4,7 @@ prophet
 beautifulsoup4
 cufflinks==0.17.3
 Cython
+cryptocmd
 DateTime==4.3
 finnhub-python
 jsonschema==4.2.1
