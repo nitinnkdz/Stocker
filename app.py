@@ -7,7 +7,7 @@ import tweepy
 import config
 import finnhub
 from fbprophet import Prophet
-from prophet.plot import plot_plotly
+from fbprophet.plot import plot_plotly
 from plotly import graph_objs as go
 import plotly.express as px
 from urllib.request import urlopen, Request
