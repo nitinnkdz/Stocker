@@ -154,9 +154,9 @@ if Dashboard == 'News & Analysis':
             st.write(results['published_utc'])
             st.image(results['image_url'])
             st.write(results['article_url'])
-
+            
     if selected1 == 'Analysis of News':
-        def get_news(ticker):
+                def get_news(ticker):
             url = finviz_url + ticker
             req = Request(url=url, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
