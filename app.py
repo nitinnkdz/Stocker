@@ -128,7 +128,7 @@ if Dashboard == 'Information':
     st.plotly_chart(fig)
 
 if Dashboard == 'News & Analysis':
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News", ],
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
 
     if selected1 == 'Market Crunch':
