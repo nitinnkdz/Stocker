@@ -156,7 +156,7 @@ if Dashboard == 'News & Analysis':
             st.write(results['article_url'])
 
     if selected1 == 'Analysis of News':
-        def get_news(ticker):
+                def get_news(ticker):
             url = finviz_url + ticker
             req = Request(url=url, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
@@ -244,8 +244,6 @@ if Dashboard == 'News & Analysis':
         # for extracting data from finviz
         finviz_url = 'https://finviz.com/quote.ashx?t='
 
-        st.header("Stock News Sentiment Analyzer")
-
         ticker = st.text_input('Enter Stock Ticker', '').upper()
 
         try:
@@ -279,6 +277,7 @@ if Dashboard == 'News & Analysis':
         </style>
         """
         st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 if Dashboard == 'Twitter':
     for username in config.screenname:
