@@ -20,7 +20,6 @@ from yahoofinancials import YahooFinancials
 import cufflinks as cf
 from cryptocmd import CmcScraper
 import json
-import talib
 import pickle
 import pandas_datareader as web
 from datetime import datetime, date
