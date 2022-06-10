@@ -27,6 +27,7 @@ from datetime import datetime, date
 from datetime import timedelta
 from scipy.optimize import minimize
 import nltk
+nltk.downloader.download('vader_lexicon')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
