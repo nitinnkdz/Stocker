@@ -8,6 +8,7 @@ cryptocmd
 DateTime==4.3
 finnhub-python
 jsonschema==4.2.1
+gunicorn
 matplotlib
 gunicorn
 matplotlib-inline==0.1.3
