@@ -8,6 +8,7 @@ import config
 import finnhub
 from prophet import Prophet
 from prophet.plot import plot_plotly
+import plotly
 from plotly import graph_objs as go
 import plotly.express as px
 from urllib.request import urlopen, Request
@@ -41,7 +42,7 @@ api = tweepy.API(auth)
 
 with st.sidebar:
     Dashboard = option_menu("Dashboard", [
-        "Overview", "Information", "Fundamental Analysis","News & Analysis",'StockTwits','Twitter', 'Reddit',
+        "Overview", "Information", "Fundamental Analysis", "News & Analysis", 'StockTwits', 'Twitter', 'Reddit',
         'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds', "FOREX"], menu_icon="cast", default_index=0,
                             styles={
                                 "nav-link"         : {"font-size"    : "16px", "text-align": "left", "margin": "0px",
@@ -126,9 +127,9 @@ if Dashboard == 'Information':
     qf.add_bollinger_bands()
     fig = qf.iplot(asFigure=True)
     st.plotly_chart(fig)
- 
+
 if Dashboard == 'News & Analysis':
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News"],
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News","Analysis of News"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
 
     if selected1 == 'Market Crunch':
@@ -154,15 +155,15 @@ if Dashboard == 'News & Analysis':
             st.write(results['published_utc'])
             st.image(results['image_url'])
             st.write(results['article_url'])
-            
+
     if selected1 == 'Analysis of News':
-        def get_news(ticker):
-            url = finviz_url + ticker
-            req = Request(url=url, headers={
+        def get_news(ticker12):
+            url12 = finviz_url + ticker12
+            req = Request(url=url12, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
             response = urlopen(req)
             # Read the contents of the file into 'html'
-            html = BeautifulSoup(response, "html.parser")
+            html = BeautifulSoup(response)
             # Find 'news-table' in the Soup and load it into 'news_table'
             news_table = html.find(id='news-table')
             return news_table
@@ -170,7 +171,7 @@ if Dashboard == 'News & Analysis':
 
         # parse news into dataframe
         def parse_news(news_table):
-            global parsed_news_df
+            global date, parsed_news_df
             parsed_news = []
 
             for x in news_table.findAll('tr'):
@@ -244,18 +245,17 @@ if Dashboard == 'News & Analysis':
 
         # for extracting data from finviz
         finviz_url = 'https://finviz.com/quote.ashx?t='
+        st.header("Bohmian's Stock News Sentiment Analyzer")
 
-        st.header("Stock News Sentiment Analyzer")
-
-        ticker = st.text_input('Enter Stock Ticker', '').upper()
+        ticker12 = st.text_input('Enter Stock Ticker', '').upper()
 
         try:
-            st.subheader("Hourly and Daily Sentiment of {} Stock".format(ticker))
-            news_table = get_news(ticker)
+            st.subheader("Hourly and Daily Sentiment of {} Stock".format(ticker12))
+            news_table = get_news(ticker12)
             parsed_news_df = parse_news(news_table)
             parsed_and_scored_news = score_news(parsed_news_df)
-            fig_hourly = plot_hourly_sentiment(parsed_and_scored_news, ticker)
-            fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker)
+            fig_hourly = plot_hourly_sentiment(parsed_and_scored_news, ticker12)
+            fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker12)
 
             st.plotly_chart(fig_hourly)
             st.plotly_chart(fig_daily)
@@ -265,7 +265,7 @@ if Dashboard == 'News & Analysis':
         		The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
         		The news headlines are obtained from the FinViz website.
         		Sentiments are given by the nltk.sentiment.vader Python library.
-        		""".format(ticker)
+        		""".format(ticker12)
 
             st.write(description)
             st.table(parsed_and_scored_news)
