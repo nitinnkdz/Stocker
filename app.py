@@ -43,7 +43,8 @@ api = tweepy.API(auth)
 with st.sidebar:
     Dashboard = option_menu("Dashboard", [
         "Overview", "Information", "Fundamental Analysis", "News & Analysis", 'StockTwits', 'Twitter', 'Reddit',
-        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds', "FOREX",'Analysis of News'], menu_icon="cast", default_index=0,
+        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds', "FOREX", 'Analysis of News'], menu_icon="cast",
+                            default_index=0,
                             styles={
                                 "nav-link"         : {"font-size"    : "16px", "text-align": "left", "margin": "0px",
                                                       "--hover-color": "#eee"},
