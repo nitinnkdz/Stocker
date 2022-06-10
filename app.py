@@ -1345,67 +1345,6 @@ if Dashboard == 'ETF & Mutual Funds':
         mf_equity_holdings = mf_data.info['equityHoldings']
         st.write(mf_equity_holdings)
 
-if Dashboard == 'FOREX':
-    components.html(
-        """
-                    <!-- TradingView Widget BEGIN -->
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/markets/currencies/forex-heat-map/" rel="noopener" target="_blank"><span class="blue-text">Forex Heat Map</span></a> by TradingView</div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
-              {
-              "width": 1300,
-              "height": 800,
-              "currencies": [
-                "EUR",
-                "USD",
-                "JPY",
-                "GBP",
-                "CHF",
-                "AUD",
-                "CAD",
-                "NZD",
-                "CNY",
-                "TRY",
-                "SEK",
-                "NOK",
-                "DKK",
-                "ZAR",
-                "HKD",
-                "SGD",
-                "THB",
-                "MXN",
-                "IDR",
-                "KRW",
-                "PLN",
-                "ISK",
-                "KWD",
-                "PHP",
-                "MYR",
-                "INR",
-                "TWD",
-                "SAR",
-                "AED",
-                "RUB",
-                "ILS",
-                "ARS",
-                "CLP",
-                "COP",
-                "PEN",
-                "UYU"
-              ],
-              "isTransparent": false,
-              "colorTheme": "light",
-              "locale": "in"
-            }
-              </script>
-            </div>
-            <!-- TradingView Widget END -->
-                    
-         """,
-        height=65000,
-        width=1200,
-    )
 
 st.sidebar.write("Created By Nitin Kohli")
 st.sidebar.write("[LinkedIn](https://www.linkedin.com/in/nitin-kohli/)")
