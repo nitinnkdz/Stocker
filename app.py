@@ -249,7 +249,7 @@ if Dashboard == 'News & Analysis':
         # for extracting data from finviz
         finviz_url = 'https://finviz.com/quote.ashx?t='
 
-        st.header("Bohmian's Stock News Sentiment Analyzer")
+        st.header("Stock News Sentiment Analyzer")
 
         ticker = st.text_input('Enter Stock Ticker', '').upper()
 
