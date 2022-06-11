@@ -146,7 +146,7 @@ if Dashboard == 'News & Analysis':
             st.write(news['url'])
 
     if selected1 == 'Ticker-News':
-        symbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
+        nsymbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
         url = f"https://api.polygon.io/v2/reference/news?limit=100&sort=published_utc&ticker={nsymbol}&published_utc.gte=2021-04-26&apiKey=l7CZdzU2ElYhYaDCj5QQeyVUxMgr7UPZ"
         r = requests.get(url)
         data = r.json()
@@ -171,6 +171,7 @@ if Dashboard == 'News & Analysis':
 
 
         # parse news into dataframe
+        @st.cache
         def parse_news(news_table):
             parsed_news = []
 
@@ -202,6 +203,7 @@ if Dashboard == 'News & Analysis':
             return parsed_news_df
 
 
+        @st.cache
         def score_news(parsed_news_df):
             # Instantiate the sentiment intensity analyzer
             vader = SentimentIntensityAnalyzer()
@@ -221,6 +223,7 @@ if Dashboard == 'News & Analysis':
             return parsed_and_scored_news
 
 
+        @st.cache
         def plot_hourly_sentiment(parsed_and_scored_news, ticker):
 
             # Group by date and ticker columns from scored_news and calculate the mean
