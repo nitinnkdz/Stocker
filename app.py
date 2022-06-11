@@ -130,9 +130,9 @@ if Dashboard == 'Information':
     st.plotly_chart(fig)
 
 if Dashboard == 'News & Analysis':
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News" ],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
 
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
     if selected1 == 'Market Crunch':
         finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
         news = finnhub_client.general_news('general', min_id=0)
@@ -146,7 +146,7 @@ if Dashboard == 'News & Analysis':
             st.write(news['url'])
 
     if selected1 == 'Ticker-News':
-        nsymbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
+        symbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
         url = f"https://api.polygon.io/v2/reference/news?limit=100&sort=published_utc&ticker={nsymbol}&published_utc.gte=2021-04-26&apiKey=l7CZdzU2ElYhYaDCj5QQeyVUxMgr7UPZ"
         r = requests.get(url)
         data = r.json()
@@ -164,7 +164,7 @@ if Dashboard == 'News & Analysis':
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
             response = urlopen(req)
             # Read the contents of the file into 'html'
-            html = BeautifulSoup(response, "html.parser")
+            html = BeautifulSoup(response)
             # Find 'news-table' in the Soup and load it into 'news_table'
             news_table = html.find(id='news-table')
             return news_table
@@ -172,7 +172,6 @@ if Dashboard == 'News & Analysis':
 
         # parse news into dataframe
         def parse_news(news_table):
-            global parsed_news_df
             parsed_news = []
 
             for x in news_table.findAll('tr'):
@@ -247,7 +246,7 @@ if Dashboard == 'News & Analysis':
         # for extracting data from finviz
         finviz_url = 'https://finviz.com/quote.ashx?t='
 
-        st.header("Stock News Sentiment Analyzer")
+        st.header("Bohmian's Stock News Sentiment Analyzer")
 
         ticker = st.text_input('Enter Stock Ticker', '').upper()
 
