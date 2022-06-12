@@ -742,37 +742,26 @@ if Dashboard == 'Analysis':
 
     ticker = st.text_input('Enter Stock Ticker', '').upper()
 
-    try:
-        st.subheader("Hourly and Daily Sentiment of {} Stock".format(ticker))
-        news_table = get_news(ticker)
-        parsed_news_df = parse_news(news_table)
-        parsed_and_scored_news = score_news(parsed_news_df)
-        fig_hourly = plot_hourly_sentiment(parsed_and_scored_news, ticker)
-        fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker)
+    st.subheader("Hourly and Daily Sentiment of {} Stock".format(ticker))
+    news_table = get_news(ticker)
+    parsed_news_df = parse_news(news_table)
+    parsed_and_scored_news = score_news(parsed_news_df)
+    fig_hourly = plot_hourly_sentiment(parsed_and_scored_news, ticker)
+    fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker)
 
-        st.plotly_chart(fig_hourly)
-        st.plotly_chart(fig_daily)
+    st.plotly_chart(fig_hourly)
+    st.plotly_chart(fig_daily)
 
-        description = """
-    		The above chart averages the sentiment scores of {} stock hourly and daily.
-    		The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
-    		The news headlines are obtained from the FinViz website.
-    		Sentiments are given by the nltk.sentiment.vader Python library.
-    		""".format(ticker)
+    description = """
+    The above chart averages the sentiment scores of {} stock hourly and daily.
+    The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
+    The news headlines are obtained from the FinViz website.
+    Sentiments are given by the nltk.sentiment.vader Python library.
+    """.format(ticker)
 
-        st.write(description)
-        st.table(parsed_and_scored_news)
+    st.write(description)
+    st.table(parsed_and_scored_news)
 
-    except:
-        st.write("Enter a correct stock ticker, e.g. 'AAPL' above and hit Enter.")
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if Dashboard == 'ML-Forecast':
     selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
