@@ -164,8 +164,7 @@ if Dashboard == 'News & Analysis':
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
             response = urlopen(req)
             # Read the contents of the file into 'html'
-            html = BeautifulSoup(response)
-            # Find 'news-table' in the Soup and load it into 'news_table'
+            html = BeautifulSoup(response,features="lxml")
             news_table = html.find(id='news-table')
             return news_table
 
