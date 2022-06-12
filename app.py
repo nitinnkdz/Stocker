@@ -40,9 +40,9 @@ auth = tweepy.OAuthHandler(config.TWITTER_CONSUMER_KEY, config.TWITTER_CONSUME_S
 auth.set_access_token(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
-st.sidebar("Select the Dashboard", [
+Dashboard = st.sidebar.selectbox("Select the Dashboard", (
         "Overview", "Information", "Fundamental Analysis", "News & Analysis", 'StockTwits', 'Twitter', 'Reddit',
-        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds'])
+        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds'))
 
 if Dashboard == 'Information':
     ticker_list = pd.read_csv(
