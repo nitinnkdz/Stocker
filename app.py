@@ -158,6 +158,7 @@ if Dashboard == 'News & Analysis':
             st.write(results['article_url'])
 
     if selected1 == 'Analysis of News':
+        @st.experimental_memo
         def get_news(ticker):
             url = finviz_url + ticker
             req = Request(url=url, headers={
@@ -171,6 +172,7 @@ if Dashboard == 'News & Analysis':
 
 
         # parse news into dataframe
+        @st.experimental_memo
         def parse_news(news_table):
             parsed_news = []
 
@@ -202,7 +204,7 @@ if Dashboard == 'News & Analysis':
             return parsed_news_df
 
 
-        @st.cache
+        @st.experimental_memo
         def score_news(parsed_news_df):
             # Instantiate the sentiment intensity analyzer
             vader = SentimentIntensityAnalyzer()
@@ -222,7 +224,7 @@ if Dashboard == 'News & Analysis':
             return parsed_and_scored_news
 
 
-        @st.cache
+        @st.experimental_memo
         def plot_hourly_sentiment(parsed_and_scored_news, ticker):
 
             # Group by date and ticker columns from scored_news and calculate the mean
@@ -234,7 +236,7 @@ if Dashboard == 'News & Analysis':
             return fig  # instead of using fig.show(), we return fig and turn it into a graphjson object for displaying in web page later
 
 
-        @st.cache
+        @st.experimental_memo
         def plot_daily_sentiment(parsed_and_scored_news, ticker):
 
             # Group by date and ticker columns from scored_news and calculate the mean
