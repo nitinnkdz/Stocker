@@ -43,13 +43,9 @@ api = tweepy.API(auth)
 with st.sidebar:
     Dashboard = option_menu("Dashboard", [
         "Overview", "Information", "Fundamental Analysis", "News & Analysis", 'StockTwits', 'Twitter', 'Reddit',
-        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds', "FOREX"], menu_icon="cast",
-                            default_index=0,
-                            styles={
-                                "nav-link"         : {"font-size"    : "16px", "text-align": "left", "margin": "0px",
-                                                      "--hover-color": "#eee"},
-                                "nav-link-selected": {"background-color": "#2C3845"},
-                            }
+        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds'], menu_icon="cast",default_index=0,styles={
+                                "nav-link": {"font-size"    : "16px", "text-align": "left", "margin": "0px","--hover-color": "#eee"},
+                                "nav-link-selected": {"background-color": "#2C3845"},}
                             )
 
 if Dashboard == 'Information':
@@ -172,6 +168,7 @@ if Dashboard == 'News & Analysis':
         # parse news into dataframe
         @st.experimental_singleton
         def parse_news(news_table):
+            global date, parsed_news_df
             parsed_news = []
 
             for x in news_table.findAll('tr'):
@@ -202,7 +199,7 @@ if Dashboard == 'News & Analysis':
             return parsed_news_df
 
 
-        @st.experimental_memo
+        @st.experimental_singleton
         def score_news(parsed_news_df):
             # Instantiate the sentiment intensity analyzer
             vader = SentimentIntensityAnalyzer()
