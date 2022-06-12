@@ -158,7 +158,6 @@ if Dashboard == 'News & Analysis':
             st.write(results['article_url'])
 
     if selected1 == 'Analysis of News':
-        @st.experimental_memo
         def get_news(ticker):
             url = finviz_url + ticker
             req = Request(url=url, headers={
@@ -172,7 +171,7 @@ if Dashboard == 'News & Analysis':
 
 
         # parse news into dataframe
-        @st.experimental_memo
+        @st.experimental_singleton
         def parse_news(news_table):
             parsed_news = []
 
