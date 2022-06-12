@@ -171,7 +171,6 @@ if Dashboard == 'News & Analysis':
 
 
         # parse news into dataframe
-        @st.cache
         def parse_news(news_table):
             parsed_news = []
 
@@ -235,6 +234,7 @@ if Dashboard == 'News & Analysis':
             return fig  # instead of using fig.show(), we return fig and turn it into a graphjson object for displaying in web page later
 
 
+        @st.cache
         def plot_daily_sentiment(parsed_and_scored_news, ticker):
 
             # Group by date and ticker columns from scored_news and calculate the mean
