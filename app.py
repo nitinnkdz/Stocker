@@ -1,5 +1,4 @@
 import time
-
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
@@ -22,7 +21,7 @@ import cufflinks as cf
 from cryptocmd import CmcScraper
 import json
 from PIL import Image
-import  time
+import time
 import pickle
 import pandas_datareader as web
 from datetime import datetime, date

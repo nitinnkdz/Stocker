@@ -13,6 +13,7 @@ holidays
 ipython==7.30.1
 korean-lunar-calendar
 LunarCalendar==0.0.9
+finnhub-python
 lxml
 MarkupSafe==2.0.1
 matplotlib
