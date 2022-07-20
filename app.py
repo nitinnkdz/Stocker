@@ -81,7 +81,7 @@ if Dashboard == "Home":
         st.write(' ')
 
     with col2:
-        image = Image.open('aa.png')
+        image = Image.open('AA.png')
         st.image(image, width=200)
     with col3:
         st.write(' ')
