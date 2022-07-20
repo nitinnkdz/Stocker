@@ -1,3 +1,5 @@
+import time
+
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
@@ -8,7 +10,6 @@ import config
 import finnhub
 from prophet import Prophet
 from prophet.plot import plot_plotly
-import plotly
 from plotly import graph_objs as go
 import plotly.express as px
 from urllib.request import urlopen, Request
@@ -16,11 +17,12 @@ from bs4 import BeautifulSoup
 import requests
 import redis
 import yfinance as yf
-import yahoofinancials
 from yahoofinancials import YahooFinancials
 import cufflinks as cf
 from cryptocmd import CmcScraper
 import json
+from PIL import Image
+import  time
 import pickle
 import pandas_datareader as web
 from datetime import datetime, date
@@ -33,8 +35,28 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from psaw import PushshiftAPI
 from yfinance import Ticker
+import quantstats as qs
 
 st.set_page_config(layout="wide")
+
+
+def add_bg_from_url():
+    st.markdown(
+        f"""
+         <style>
+         .stApp {{
+             background-image: url("https://images.unsplash.com/photo-1549421263-6064833b071b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1365&q=80");
+             background-attachment: fixed;
+             background-size: cover
+         }}
+         </style>
+         """,
+        unsafe_allow_html=True
+    )
+
+
+add_bg_from_url()
+
 yf.pdr_override()
 auth = tweepy.OAuthHandler(config.TWITTER_CONSUMER_KEY, config.TWITTER_CONSUME_SECRET)
 auth.set_access_token(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_TOKEN_SECRET)
@@ -42,8 +64,10 @@ api = tweepy.API(auth)
 
 with st.sidebar:
     Dashboard = option_menu("Dashboard", [
-        "Overview", "Information", "Fundamental Analysis", "News & Analysis", 'StockTwits', 'Twitter', 'Reddit',
-        'ML-Forecast', 'Portfolio Optimiser', 'ETF & Mutual Funds', "FOREX"], menu_icon="cast", default_index=0,
+        "Home", "Market Overview", "Stocks", "News & Analysis", "Social Sentiments", "ETF & Mutual Funds",
+        "Startup Crunch",
+        'ML-Forecast', 'Portfolio', "FOREX-Map", 'Quant Report'], menu_icon="cast",
+                            default_index=0,
                             styles={
                                 "nav-link"         : {"font-size"    : "16px", "text-align": "left", "margin": "0px",
                                                       "--hover-color": "#eee"},
@@ -51,87 +75,265 @@ with st.sidebar:
                             }
                             )
 
-if Dashboard == 'Information':
-    ticker_list = pd.read_csv(
-        'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-        error_bad_lines=False)
-    tickerSymbol = st.selectbox('Stock ticker', ticker_list)
-    tickerData = yf.Ticker(tickerSymbol)  #
-    tickerDf = tickerData.history(period="max")
+if Dashboard == "Home":
+    col1, col2, col3 = st.columns(3)
 
-    string_logo = '<img src=%s>' % tickerData.info['logo_url']
-    st.markdown(string_logo, unsafe_allow_html=True)
+    with col1:
+        st.write(' ')
 
-    components.html(
-        f"""
-               <!-- TradingView Widget BEGIN -->
-        <div class="tradingview-widget-container">
-          <div id="tradingview_769cb"></div>
-          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{tickerSymbol}/" rel="noopener" target="_blank"><span class="blue-text">{tickerSymbol} Chart</span></a> by TradingView</div>
-          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-          <script type="text/javascript">
-          new TradingView.widget(
-          {{
-          "width": 980,
-          "height": 610,
-          "symbol": "{tickerSymbol}",
-          "interval": "D",
-          "timezone": "Etc/UTC",
-          "theme": "dark",
-          "style": "3",
-          "locale": "in",
-          "toolbar_bg": "#f1f3f6",
-          "enable_publishing": false,
-          "hide_side_toolbar": false,
-          "allow_symbol_change": true,
-          "show_popup_button": true,
-          "popup_width": "1000",
-          "popup_height": "650",
-          "container_id": "tradingview_769cb"
-        }}
-          );
-          </script>
-        </div>
-        <!-- TradingView Widget END -->
-           """,
-        height=610, width=980,
-    )
+    with col2:
+        image = Image.open('aa.png')
+        st.image(image, width=200)
+    with col3:
+        st.write(' ')
+    st.markdown("This application allows you to examine Fundamentals, Market News, and Investor Sentiment.This application\
+                can provide you with a variety of stock-related information, as well as forecast the future value of any\
+                cryptocurrency/stocks! Under the hood, the application is developed with Streamlit (the front-end) and \
+                the Facebook Prophet model, which is an advanced open-source forecasting model established by Facebook.\
+                You can choose to train for any number of days in the future model on all available data or a specific \
+                period range. Finally, the prediction results can be plotted on both a normal and log scale.This \
+                application makes use of the Twitter API to deliver tweets connected to a ticker, as well as other APIs\
+                such as Iex Cloud, Finnhub, and Polygon.io to provide various information \
+                about a specific symbol.This features trading-view to analyse charts as well. ")
 
-    string_name = tickerData.info['longName']
-    st.header('**%s**' % string_name)
 
-    sec = tickerData.info['sector']
-    st.write(sec)
 
-    string_summary = tickerData.info['longBusinessSummary']
-    st.info(string_summary)
+if Dashboard == 'Stocks':
+    selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
+    if selected1 == 'Ticker-Info':
+        ticker_list = pd.read_csv(
+            'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
+            error_bad_lines=False)
+        tickerSymbol = st.selectbox('Stock ticker', ticker_list)
+        tickerData = yf.Ticker(tickerSymbol)
+        tickerDf = tickerData.history(period="max")
 
-    st.header('**Ticker data**')
-    st.write(tickerDf)
+        string_logo = '<img src=%s>' % tickerData.info['logo_url']
+        st.markdown(string_logo, unsafe_allow_html=True)
 
-    st.header('Major Holders')
-    major_holders = tickerData.major_holders
-    st._arrow_table(major_holders)
+        components.html(
+            f"""
+            <!-- TradingView Widget BEGIN -->
+            <div class="tradingview-widget-container">
+              <div id="tradingview_5861a"></div>
+              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/AAPL/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+              <script type="text/javascript">
+              new TradingView.MediumWidget(
+              {{
+              "symbols": [
+                [
+                  "{tickerSymbol}",     
+                ]
+              ],
+              "chartOnly": true,
+              "width": 1000,
+              "height": 500,
+              "locale": "in",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "autosize": false,
+              "showVolume": false,
+              "hideDateRanges": false,
+              "scalePosition": "left",
+              "scaleMode": "Normal",
+              "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "chartType": "area",
+              "fontColor": "#787b86",
+              "gridLineColor": "rgba(240, 243, 250, 0.06)",
+              "lineColor": "rgba(242, 54, 69, 1)",
+              "topColor": "rgba(247, 82, 95, 0.3)",
+              "bottomColor": "rgba(247, 124, 128, 0)",
+              "lineWidth": 4,
+              "container_id": "tradingview_5861a"
+            }}
+              );
+              </script>
+            </div>
+            <!-- TradingView Widget END -->
+    
+               """,
+            height=610, width=980,
+        )
 
-    st.header('Institutional Holders')
-    institutional_holders = tickerData.institutional_holders
-    st._arrow_table(institutional_holders)
+        string_name = tickerData.info['longName']
+        st.header('**%s**' % string_name)
 
-    st.header('Mutual Funds Holders')
-    mf_holders = tickerData.mutualfund_holders
-    st._arrow_table(mf_holders)
+        sec = tickerData.info['sector']
+        st.write(sec)
 
-    # Bollinger bands
-    st.header('**Bollinger Bands**')
-    qf = cf.QuantFig(tickerDf, title='First Quant Figure', legend='top', name='GS')
-    qf.add_bollinger_bands()
-    fig = qf.iplot(asFigure=True)
-    st.plotly_chart(fig)
+        string_summary = tickerData.info['longBusinessSummary']
+        st.info(string_summary)
+
+        st.header('**Ticker data**')
+        st.write(tickerDf)
+
+        st.header('Major Holders')
+        major_holders = tickerData.major_holders
+        st._arrow_table(major_holders)
+
+        st.header('Institutional Holders')
+        institutional_holders = tickerData.institutional_holders
+        st._arrow_table(institutional_holders)
+
+        st.header('Mutual Funds Holders')
+        mf_holders = tickerData.mutualfund_holders
+        st._arrow_table(mf_holders)
+
+        # Bollinger bands
+        st.header('**Bollinger Bands**')
+        qf = cf.QuantFig(tickerDf, title='First Quant Figure', legend='top', name='GS')
+        qf.add_bollinger_bands()
+        fig = qf.iplot(asFigure=True)
+        st.plotly_chart(fig)
+
+    if selected1 == 'Fundamentals':
+        selected2 = option_menu(None, ["Balance Sheet", "Income Statement", "Cash-Flow", 'Analyze Statements'],
+                                menu_icon="cast", default_index=0, orientation="horizontal")
+        ticker_list = pd.read_csv(
+            'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
+            error_bad_lines=False)
+        tickerSymbol = st.selectbox('Stock ticker', ticker_list)
+        tickerData = yf.Ticker(tickerSymbol)
+        if selected2 == 'Balance Sheet':
+            tickerDf = tickerData.get_balance_sheet()
+            st.subheader('**Balance Sheet**')
+            st.table(tickerDf)
+
+        if selected2 == 'Income Statement':
+            tickerDfi = tickerData.financials
+            st.subheader('**Income Statement**')
+            st.table(tickerDfi)
+
+        if selected2 == 'Cash-Flow':
+            tickerDfc = tickerData.cashflow
+            st.subheader('**Cash Flow**')
+            st.table(tickerDfc)
+
+        if selected2 == 'Analyze Statements':
+            url23 = requests.get(
+                f'https://financialmodelingprep.com/api/v3/ratios-ttm/{tickerSymbol}?apikey=7062ab81fcd13c8807496957c0208206')
+            live_analysis = url23.json()
+            st.markdown('P/E ratio')
+            st.write(live_analysis[0]['peRatioTTM'])
+            st.markdown('PE/G Ratio ')
+            st.write(live_analysis[0]['pegRatioTTM'])
+            st.markdown('Payout Ratio')
+            st.write(live_analysis[0]['payoutRatioTTM'])
+            st.markdown('Current ratio')
+            st.write(live_analysis[0]['currentRatioTTM'])
+            st.markdown('Quick ratio')
+            st.write(live_analysis[0]['quickRatioTTM'])
+            st.markdown('Cash ratio')
+            st.write(live_analysis[0]['cashRatioTTM'])
+            st.markdown('Days of sales Outstanding')
+            st.write(live_analysis[0]['daysOfSalesOutstandingTTM'])
+            st.markdown('Days of Inventory Outstanding')
+            st.write(live_analysis[0]['daysOfInventoryOutstandingTTM'])
+            st.markdown('Days of Payable Outstanding')
+            st.write(live_analysis[0]['daysOfPayablesOutstandingTTM'])
+            st.markdown('Operating Cycle')
+            st.write(live_analysis[0]['operatingCycleTTM'])
+            st.markdown('Cash Conversion Cycle')
+            st.write(live_analysis[0]['cashConversionCycleTTM'])
+            st.markdown('Gross Profit Margin')
+            st.write(live_analysis[0]['grossProfitMarginTTM'])
+            st.markdown('Operating Profit Margin')
+            st.write(live_analysis[0]['operatingProfitMarginTTM'])
+            st.markdown('Pretax Profit Margin')
+            st.write(live_analysis[0]['pretaxProfitMarginTTM'])
+            st.markdown('Net Profit Margin')
+            st.write(live_analysis[0]['netProfitMarginTTM'])
+            st.markdown('Effective Tax Rate')
+            st.write(live_analysis[0]['effectiveTaxRateTTM'])
+            st.markdown('Return on Assets')
+            st.write(live_analysis[0]['returnOnAssetsTTM'])
+            st.markdown('Return on Equity')
+            st.write(live_analysis[0]['returnOnEquityTTM'])
+            st.markdown('Return on Capital Employed')
+            st.write(live_analysis[0]['returnOnCapitalEmployedTTM'])
+            st.markdown('Net Income Per EBT')
+            st.write(live_analysis[0]['netIncomePerEBTTTM'])
+            st.markdown('EBT per EBIT')
+            st.write(live_analysis[0]['ebtPerEbitTTM'])
+            st.markdown('EBIT Per Revenue')
+            st.write(live_analysis[0]['ebitPerRevenueTTM'])
+            st.markdown('Debt Ratio')
+            st.write(live_analysis[0]['debtRatioTTM'])
+            st.markdown('Debt Equity Ratio')
+            st.write(live_analysis[0]['debtEquityRatioTTM'])
+            st.markdown('long Term Debt To Capitalization')
+            st.write(live_analysis[0]['longTermDebtToCapitalizationTTM'])
+            st.markdown('Total Debt To Capitalization')
+            st.write(live_analysis[0]['totalDebtToCapitalizationTTM'])
+            st.markdown('Interest Coverage')
+            st.write(live_analysis[0]['interestCoverageTTM'])
+            st.markdown('CashFlow To Debt Ratio')
+            st.write(live_analysis[0]['cashFlowToDebtRatioTTM'])
+            st.markdown('Company Equity Multiplier')
+            st.write(live_analysis[0]['companyEquityMultiplierTTM'])
+            st.markdown('ReceivablesTurnover')
+            st.write(live_analysis[0]['receivablesTurnoverTTM'])
+            st.markdown('Payables Turnover')
+            st.write(live_analysis[0]['payablesTurnoverTTM'])
+            st.markdown('Inventory Turnover')
+            st.write(live_analysis[0]['inventoryTurnoverTTM'])
+            st.markdown('FixedAsset Turnover')
+            st.write(live_analysis[0]['fixedAssetTurnoverTTM'])
+            st.markdown('Asset Turnover')
+            st.write(live_analysis[0]['assetTurnoverTTM'])
+            st.markdown('Operating Cash Flow Per Share')
+            st.write(live_analysis[0]['operatingCashFlowPerShareTTM'])
+            st.markdown('Free Cash Flow Per Share')
+            st.write(live_analysis[0]['freeCashFlowPerShareTTM'])
+            st.markdown('Cash Per Share')
+            st.write(live_analysis[0]['cashPerShareTTM'])
+            st.markdown('Operating Cash Flow Sales Ratio')
+            st.write(live_analysis[0]['operatingCashFlowSalesRatioTTM'])
+            st.markdown('Free Cash Flow Operating Cash Flow Ratio')
+            st.write(live_analysis[0]['freeCashFlowOperatingCashFlowRatioTTM'])
+            st.markdown('CashFlow Coverage Ratios')
+            st.write(live_analysis[0]['cashFlowCoverageRatiosTTM'])
+            st.markdown('Short Term Coverage Ratios')
+            st.write(live_analysis[0]['shortTermCoverageRatiosTTM'])
+            st.markdown('Capital Expenditure Coverage Ratio')
+            st.write(live_analysis[0]['capitalExpenditureCoverageRatioTTM'])
+            st.markdown('Dividend Paid And Capex Coverage Ratio')
+            st.write(live_analysis[0]['dividendPaidAndCapexCoverageRatioTTM'])
+            st.markdown('Price Book Value Ratio')
+            st.write(live_analysis[0]['priceBookValueRatioTTM'])
+            st.markdown('Price To Book Ratio')
+            st.write(live_analysis[0]['priceToBookRatioTTM'])
+            st.markdown('Price To Sales Ratio')
+            st.write(live_analysis[0]['priceToSalesRatioTTM'])
+            st.markdown('Price Earnings Ratio')
+            st.write(live_analysis[0]['priceEarningsRatioTTM'])
+            st.markdown('Price To Free Cash Flows Ratio')
+            st.write(live_analysis[0]['priceToFreeCashFlowsRatioTTM'])
+            st.markdown('Price To Operating Cash Flows Ratio')
+            st.write(live_analysis[0]['priceToOperatingCashFlowsRatioTTM'])
+            st.markdown('price Cash Flow Ratio')
+            st.write(live_analysis[0]['priceCashFlowRatioTTM'])
+            st.markdown('Rrice Earnings To Growth Ratio')
+            st.write(live_analysis[0]['priceEarningsToGrowthRatioTTM'])
+            st.markdown('Price Sales Ratio')
+            st.write(live_analysis[0]['priceSalesRatioTTM'])
+            st.markdown('Dividend Yield')
+            st.write(live_analysis[0]['dividendYieldTTM'])
+            st.markdown('Enterprise Value Multiple')
+            st.write(live_analysis[0]['enterpriseValueMultipleTTM'])
+            st.markdown('Price Fair Value')
+            st.write(live_analysis[0]['priceFairValueTTM'])
+            st.markdown('dividendPerShare')
+            st.write(live_analysis[0]['dividendPerShareTTM'])
 
 if Dashboard == 'News & Analysis':
-
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News"],
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
+
     if selected1 == 'Market Crunch':
         finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
         news = finnhub_client.general_news('general', min_id=0)
@@ -156,35 +358,133 @@ if Dashboard == 'News & Analysis':
             st.image(results['image_url'])
             st.write(results['article_url'])
 
-if Dashboard == 'Twitter':
-    for username in config.screenname:
-        user = api.get_user(username)
-        tweets = api.user_timeline(username)
+    if selected1 == 'Analysis of News':
+        def get_news(ticker):
+            url = finviz_url + ticker
+            req = Request(url=url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
+            response = urlopen(req)
+            # Read the contents of the file into 'html'
+            html = BeautifulSoup(response, "html.parser")
+            # Find 'news-table' in the Soup and load it into 'news_table'
+            news_table = html.find(id='news-table')
+            return news_table
 
-        st.subheader(username)
-        st.image(user.profile_image_url)
 
-        for tweet in tweets:
-            if '$' in tweet.text:
-                words = tweet.text.split(' ')
-                for word in words:
-                    if word.startswith('$') and word[1:].isalpha():
-                        symbol = word[1:]
-                        st.write(symbol)
-                        st.write(tweet.text)
-                        st.image(f"https://finviz.com/chart.ashx?t={symbol}")
+        # parse news into dataframe
+        def parse_news(news_table):
+            global parsed_news_df
+            parsed_news = []
 
-if Dashboard == 'Overview':
-    st.markdown("This application allows you to examine Fundamentals, Market News, and Investor Sentiment.This application\
-                can provide you with a variety of stock-related information, as well as forecast the future value of any\
-                cryptocurrency/stocks! Under the hood, the application is developed with Streamlit (the front-end) and \
-                the Facebook Prophet model, which is an advanced open-source forecasting model established by Facebook.\
-                You can choose to train for any number of days in the future model on all available data or a specific \
-                period range. Finally, the prediction results can be plotted on both a normal and log scale.This \
-                application makes use of the Twitter API to deliver tweets connected to a ticker, as well as other APIs\
-                such as Iex Cloud, Finnhub, and Polygon.io to provide various information\about a specific symbol. \
-                This features trading-view to analyse charts as well.")
+            for x in news_table.findAll('tr'):
+                # read the text from each tr tag into text
+                # get text from a only
+                text = x.a.get_text()
+                # splite text in the td tag into a list
+                date_scrape = x.td.text.split()
+                # if the length of 'date_scrape' is 1, load 'time' as the only element
 
+                if len(date_scrape) == 1:
+                    time = date_scrape[0]
+
+                # else load 'date' as the 1st element and 'time' as the second
+                else:
+                    date = date_scrape[0]
+                    time = date_scrape[1]
+
+                # Append ticker, date, time and headline as a list to the 'parsed_news' list
+                parsed_news.append([date, time, text])
+                # Set column names
+                columns = ['date', 'time', 'headline']
+                # Convert the parsed_news list into a DataFrame called 'parsed_and_scored_news'
+                parsed_news_df = pd.DataFrame(parsed_news, columns=columns)
+                # Create a pandas datetime object from the strings in 'date' and 'time' column
+                parsed_news_df['datetime'] = pd.to_datetime(parsed_news_df['date'] + ' ' + parsed_news_df['time'])
+
+            return parsed_news_df
+
+
+        def score_news(parsed_news_df):
+            # Instantiate the sentiment intensity analyzer
+            vader = SentimentIntensityAnalyzer()
+
+            # Iterate through the headlines and get the polarity scores using vader
+            scores = parsed_news_df['headline'].apply(vader.polarity_scores).tolist()
+
+            # Convert the 'scores' list of dicts into a DataFrame
+            scores_df = pd.DataFrame(scores)
+
+            # Join the DataFrames of the news and the list of dicts
+            parsed_and_scored_news = parsed_news_df.join(scores_df, rsuffix='_right')
+            parsed_and_scored_news = parsed_and_scored_news.set_index('datetime')
+            parsed_and_scored_news = parsed_and_scored_news.drop(['date', 'time'], 1)
+            parsed_and_scored_news = parsed_and_scored_news.rename(columns={"compound": "sentiment_score"})
+
+            return parsed_and_scored_news
+
+
+        def plot_hourly_sentiment(parsed_and_scored_news, ticker):
+
+            # Group by date and ticker columns from scored_news and calculate the mean
+            mean_scores = parsed_and_scored_news.resample('H').mean()
+
+            # Plot a bar chart with plotly
+            fig = px.bar(mean_scores, x=mean_scores.index, y='sentiment_score',
+                         title=ticker + ' Hourly Sentiment Scores')
+            return fig  # instead of using fig.show(), we return fig and turn it into a graphjson object for displaying in web page later
+
+
+        def plot_daily_sentiment(parsed_and_scored_news, ticker):
+
+            # Group by date and ticker columns from scored_news and calculate the mean
+            mean_scores = parsed_and_scored_news.resample('D').mean()
+
+            # Plot a bar chart with plotly
+            fig = px.bar(mean_scores, x=mean_scores.index, y='sentiment_score',
+                         title=ticker + ' Daily Sentiment Scores')
+            return fig  # instead of using fig.show(), we return fig and turn it into a graphjson object for displaying in web page later
+
+
+        # for extracting data from finviz
+        finviz_url = 'https://finviz.com/quote.ashx?t='
+
+        st.header("Stock News Sentiment Analyzer")
+
+        ticker = st.text_input('Enter Stock Ticker', '').upper()
+
+        try:
+            st.subheader("Hourly and Daily Sentiment of {} Stock".format(ticker))
+            news_table = get_news(ticker)
+            parsed_news_df = parse_news(news_table)
+            parsed_and_scored_news = score_news(parsed_news_df)
+            fig_hourly = plot_hourly_sentiment(parsed_and_scored_news, ticker)
+            fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker)
+
+            st.plotly_chart(fig_hourly)
+            st.plotly_chart(fig_daily)
+
+            description = """
+        		The above chart averages the sentiment scores of {} stock hourly and daily.
+        		The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
+        		The news headlines are obtained from the FinViz website.
+        		Sentiments are given by the nltk.sentiment.vader Python library.
+        		""".format(ticker)
+
+            st.write(description)
+            st.table(parsed_and_scored_news)
+
+        except:
+            st.write("Enter a correct stock ticker, e.g. 'AAPL' above and hit Enter.")
+
+        hide_streamlit_style = """
+        <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        </style>
+        """
+        st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+if Dashboard == 'Market Overview':
     components.html(
         """
         <!-- TradingView Widget BEGIN -->
@@ -647,17 +947,53 @@ if Dashboard == 'Overview':
         height=1100, width=1100,
     )
 
-if Dashboard == 'StockTwits':
+if Dashboard == 'Social Sentiments':
+    selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
 
-    symboltws = st.text_input("Symbol", value='AAPL', max_chars=10)
-    r1 = requests.get(f"https://api.stocktwits.com/api/2/streams/symbol/{symboltws}.json")
-    data1 = r1.json()
-    for message in data1['messages']:
-        st.image(message['user']['avatar_url'])
-        st.write(message['user']['username'])
-        st.write(message['created_at'])
-        st.write(message['body'])
+    if selected1 == 'StockTwits':
+        symboltws = st.text_input("Symbol", value='AAPL', max_chars=10)
+        r1 = requests.get(f"https://api.stocktwits.com/api/2/streams/symbol/{symboltws}.json")
+        data1 = r1.json()
+        for message in data1['messages']:
+            st.image(message['user']['avatar_url'])
+            st.write(message['user']['username'])
+            st.write(message['created_at'])
+            st.write(message['body'])
 
+    if selected1 == 'Twitter':
+        for username in config.screenname:
+            user = api.get_user(username)
+            tweets = api.user_timeline(username)
+
+            st.subheader(username)
+            st.image(user.profile_image_url)
+
+            for tweet in tweets:
+                if '$' in tweet.text:
+                    words = tweet.text.split(' ')
+                    for word in words:
+                        if word.startswith('$') and word[1:].isalpha():
+                            symbol = word[1:]
+                            st.write(symbol)
+                            st.write(tweet.text)
+                            st.image(f"https://finviz.com/chart.ashx?t={symbol}")
+
+    if selected1 == 'Reddit':
+        tsymbol = st.sidebar.text_input("Symbol", value='TSLA', max_chars=10)
+        api = PushshiftAPI()
+        start_time = date(2022, 5, 26)
+        submissions = list(api.search_submissions(after=start_time,
+                                                  subreddit='wallstreetbets',
+                                                  filter=['url', 'author', 'title', 'subreddit'],
+                                                  limit=50)
+                           )
+        for submission in submissions:
+            words = submission.title.split()
+            cashtags = list(set(filter(lambda word: word.lower().startswith('$'), words)))
+            if len(cashtags) > 0:
+                st.write(cashtags)
+                st.write(submission.title)
 
 if Dashboard == 'ML-Forecast':
     selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
@@ -838,7 +1174,7 @@ if Dashboard == 'ML-Forecast':
             fig2 = m.plot_components(forecast)
             st.write(fig2)
 
-if Dashboard == 'Portfolio Optimiser':
+if Dashboard == 'Portfolio':
     symbol1list = pd.read_csv(
         'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
         error_bad_lines=False)
@@ -912,162 +1248,6 @@ if Dashboard == 'Portfolio Optimiser':
     st.write("Volatility: ", data[1])
     st.write("Sharpe Ratio: ", data[2])
 
-if Dashboard == 'Fundamental Analysis':
-    selected2 = option_menu(None, ["Balance Sheet", "Income Statement", "Cash-Flow", 'Analyze Statements'],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
-    ticker_list = pd.read_csv(
-        'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-        error_bad_lines=False)
-    tickerSymbol = st.selectbox('Stock ticker', ticker_list)
-    tickerData = yf.Ticker(tickerSymbol)
-    if selected2 == 'Balance Sheet':
-        tickerDf = tickerData.get_balance_sheet()
-        st.subheader('**Balance Sheet**')
-        st.table(tickerDf)
-
-    if selected2 == 'Income Statement':
-        tickerDfi = tickerData.financials
-        st.subheader('**Income Statement**')
-        st.table(tickerDfi)
-
-    if selected2 == 'Cash-Flow':
-        tickerDfc = tickerData.cashflow
-        st.subheader('**Cash Flow**')
-        st.table(tickerDfc)
-
-    if selected2 == 'Analyze Statements':
-        url23 = requests.get(
-            f'https://financialmodelingprep.com/api/v3/ratios-ttm/{tickerSymbol}?apikey=7062ab81fcd13c8807496957c0208206')
-        live_analysis = url23.json()
-        st.markdown('P/E ratio')
-        st.write(live_analysis[0]['peRatioTTM'])
-        st.markdown('PE/G Ratio ')
-        st.write(live_analysis[0]['pegRatioTTM'])
-        st.markdown('Payout Ratio')
-        st.write(live_analysis[0]['payoutRatioTTM'])
-        st.markdown('Current ratio')
-        st.write(live_analysis[0]['currentRatioTTM'])
-        st.markdown('Quick ratio')
-        st.write(live_analysis[0]['quickRatioTTM'])
-        st.markdown('Cash ratio')
-        st.write(live_analysis[0]['cashRatioTTM'])
-        st.markdown('Days of sales Outstanding')
-        st.write(live_analysis[0]['daysOfSalesOutstandingTTM'])
-        st.markdown('Days of Inventory Outstanding')
-        st.write(live_analysis[0]['daysOfInventoryOutstandingTTM'])
-        st.markdown('Days of Payable Outstanding')
-        st.write(live_analysis[0]['daysOfPayablesOutstandingTTM'])
-        st.markdown('Operating Cycle')
-        st.write(live_analysis[0]['operatingCycleTTM'])
-        st.markdown('Cash Conversion Cycle')
-        st.write(live_analysis[0]['cashConversionCycleTTM'])
-        st.markdown('Gross Profit Margin')
-        st.write(live_analysis[0]['grossProfitMarginTTM'])
-        st.markdown('Operating Profit Margin')
-        st.write(live_analysis[0]['operatingProfitMarginTTM'])
-        st.markdown('Pretax Profit Margin')
-        st.write(live_analysis[0]['pretaxProfitMarginTTM'])
-        st.markdown('Net Profit Margin')
-        st.write(live_analysis[0]['netProfitMarginTTM'])
-        st.markdown('Effective Tax Rate')
-        st.write(live_analysis[0]['effectiveTaxRateTTM'])
-        st.markdown('Return on Assets')
-        st.write(live_analysis[0]['returnOnAssetsTTM'])
-        st.markdown('Return on Equity')
-        st.write(live_analysis[0]['returnOnEquityTTM'])
-        st.markdown('Return on Capital Employed')
-        st.write(live_analysis[0]['returnOnCapitalEmployedTTM'])
-        st.markdown('Net Income Per EBT')
-        st.write(live_analysis[0]['netIncomePerEBTTTM'])
-        st.markdown('EBT per EBIT')
-        st.write(live_analysis[0]['ebtPerEbitTTM'])
-        st.markdown('EBIT Per Revenue')
-        st.write(live_analysis[0]['ebitPerRevenueTTM'])
-        st.markdown('Debt Ratio')
-        st.write(live_analysis[0]['debtRatioTTM'])
-        st.markdown('Debt Equity Ratio')
-        st.write(live_analysis[0]['debtEquityRatioTTM'])
-        st.markdown('long Term Debt To Capitalization')
-        st.write(live_analysis[0]['longTermDebtToCapitalizationTTM'])
-        st.markdown('Total Debt To Capitalization')
-        st.write(live_analysis[0]['totalDebtToCapitalizationTTM'])
-        st.markdown('Interest Coverage')
-        st.write(live_analysis[0]['interestCoverageTTM'])
-        st.markdown('CashFlow To Debt Ratio')
-        st.write(live_analysis[0]['cashFlowToDebtRatioTTM'])
-        st.markdown('Company Equity Multiplier')
-        st.write(live_analysis[0]['companyEquityMultiplierTTM'])
-        st.markdown('ReceivablesTurnover')
-        st.write(live_analysis[0]['receivablesTurnoverTTM'])
-        st.markdown('Payables Turnover')
-        st.write(live_analysis[0]['payablesTurnoverTTM'])
-        st.markdown('Inventory Turnover')
-        st.write(live_analysis[0]['inventoryTurnoverTTM'])
-        st.markdown('FixedAsset Turnover')
-        st.write(live_analysis[0]['fixedAssetTurnoverTTM'])
-        st.markdown('Asset Turnover')
-        st.write(live_analysis[0]['assetTurnoverTTM'])
-        st.markdown('Operating Cash Flow Per Share')
-        st.write(live_analysis[0]['operatingCashFlowPerShareTTM'])
-        st.markdown('Free Cash Flow Per Share')
-        st.write(live_analysis[0]['freeCashFlowPerShareTTM'])
-        st.markdown('Cash Per Share')
-        st.write(live_analysis[0]['cashPerShareTTM'])
-        st.markdown('Operating Cash Flow Sales Ratio')
-        st.write(live_analysis[0]['operatingCashFlowSalesRatioTTM'])
-        st.markdown('Free Cash Flow Operating Cash Flow Ratio')
-        st.write(live_analysis[0]['freeCashFlowOperatingCashFlowRatioTTM'])
-        st.markdown('CashFlow Coverage Ratios')
-        st.write(live_analysis[0]['cashFlowCoverageRatiosTTM'])
-        st.markdown('Short Term Coverage Ratios')
-        st.write(live_analysis[0]['shortTermCoverageRatiosTTM'])
-        st.markdown('Capital Expenditure Coverage Ratio')
-        st.write(live_analysis[0]['capitalExpenditureCoverageRatioTTM'])
-        st.markdown('Dividend Paid And Capex Coverage Ratio')
-        st.write(live_analysis[0]['dividendPaidAndCapexCoverageRatioTTM'])
-        st.markdown('Price Book Value Ratio')
-        st.write(live_analysis[0]['priceBookValueRatioTTM'])
-        st.markdown('Price To Book Ratio')
-        st.write(live_analysis[0]['priceToBookRatioTTM'])
-        st.markdown('Price To Sales Ratio')
-        st.write(live_analysis[0]['priceToSalesRatioTTM'])
-        st.markdown('Price Earnings Ratio')
-        st.write(live_analysis[0]['priceEarningsRatioTTM'])
-        st.markdown('Price To Free Cash Flows Ratio')
-        st.write(live_analysis[0]['priceToFreeCashFlowsRatioTTM'])
-        st.markdown('Price To Operating Cash Flows Ratio')
-        st.write(live_analysis[0]['priceToOperatingCashFlowsRatioTTM'])
-        st.markdown('price Cash Flow Ratio')
-        st.write(live_analysis[0]['priceCashFlowRatioTTM'])
-        st.markdown('Rrice Earnings To Growth Ratio')
-        st.write(live_analysis[0]['priceEarningsToGrowthRatioTTM'])
-        st.markdown('Price Sales Ratio')
-        st.write(live_analysis[0]['priceSalesRatioTTM'])
-        st.markdown('Dividend Yield')
-        st.write(live_analysis[0]['dividendYieldTTM'])
-        st.markdown('Enterprise Value Multiple')
-        st.write(live_analysis[0]['enterpriseValueMultipleTTM'])
-        st.markdown('Price Fair Value')
-        st.write(live_analysis[0]['priceFairValueTTM'])
-        st.markdown('dividendPerShare')
-        st.write(live_analysis[0]['dividendPerShareTTM'])
-
-if Dashboard == 'Reddit':
-    tsymbol = st.sidebar.text_input("Symbol", value='TSLA', max_chars=10)
-    api = PushshiftAPI()
-    start_time = date(2022, 5, 26)
-    submissions = list(api.search_submissions(after=start_time,
-                                              subreddit='wallstreetbets',
-                                              filter=['url', 'author', 'title', 'subreddit'],
-                                              limit=50)
-                       )
-    for submission in submissions:
-        words = submission.title.split()
-        cashtags = list(set(filter(lambda word: word.lower().startswith('$'), words)))
-        if len(cashtags) > 0:
-            st.write(cashtags)
-            st.write(submission.title)
-
 if Dashboard == 'ETF & Mutual Funds':
     selected2 = option_menu(None, ["ETF", "Mutual Funds", ],
                             menu_icon="cast", default_index=0, orientation="horizontal")
@@ -1082,37 +1262,50 @@ if Dashboard == 'ETF & Mutual Funds':
 
         components.html(
             f"""
-               <!-- TradingView Widget BEGIN -->
+        <!-- TradingView Widget BEGIN -->
         <div class="tradingview-widget-container">
-          <div id="tradingview_769cb"></div>
-          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{option}/" rel="noopener" target="_blank"><span class="blue-text">{option} Chart</span></a> by TradingView</div>
+          <div id="tradingview_5861a"></div>
+          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/AAPL/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
-          new TradingView.widget(
+          new TradingView.MediumWidget(
           {{
-          "width": 980,
-          "height": 610,
-          "symbol": "{option}",
-          "interval": "D",
-          "timezone": "Etc/UTC",
-          "theme": "dark",
-          "style": "3",
+          "symbols": [
+            [
+              "{option}",     
+            ]
+          ],
+          "chartOnly": true,
+          "width": 1000,
+          "height": 500,
           "locale": "in",
-          "toolbar_bg": "#f1f3f6",
-          "enable_publishing": false,
-          "hide_side_toolbar": false,
-          "allow_symbol_change": true,
-          "show_popup_button": true,
-          "popup_width": "1000",
-          "popup_height": "650",
-          "container_id": "tradingview_769cb"
+          "colorTheme": "dark",
+          "isTransparent": true,
+          "autosize": false,
+          "showVolume": false,
+          "hideDateRanges": false,
+          "scalePosition": "left",
+          "scaleMode": "Normal",
+          "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+          "noTimeScale": false,
+          "valuesTracking": "1",
+          "chartType": "area",
+          "fontColor": "#787b86",
+          "gridLineColor": "rgba(240, 243, 250, 0.06)",
+          "lineColor": "rgba(242, 54, 69, 1)",
+          "topColor": "rgba(247, 82, 95, 0.3)",
+          "bottomColor": "rgba(247, 124, 128, 0)",
+          "lineWidth": 4,
+          "container_id": "tradingview_5861a"
         }}
           );
           </script>
         </div>
         <!-- TradingView Widget END -->
-           """,
+
+                   """,
             height=610, width=980,
+
         )
 
         etf_string_summary = etfData.info['longBusinessSummary']
@@ -1219,8 +1412,102 @@ if Dashboard == 'ETF & Mutual Funds':
         mf_equity_holdings = mf_data.info['equityHoldings']
         st.write(mf_equity_holdings)
 
+if Dashboard == 'FOREX-Map':
+    with st.spinner('Wait for it...'):
+        time.sleep(5)
+        st.success('Done!')
+    components.html(
+        """
+                    <!-- TradingView Widget BEGIN -->
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/markets/currencies/forex-heat-map/" rel="noopener" target="_blank"><span class="blue-text">Forex Heat Map</span></a> by TradingView</div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
+              {
+              "width": 1300,
+              "height": 800,
+              "currencies": [
+                "EUR",
+                "USD",
+                "JPY",
+                "GBP",
+                "CHF",
+                "AUD",
+                "CAD",
+                "NZD",
+                "CNY",
+                "TRY",
+                "SEK",
+                "NOK",
+                "DKK",
+                "ZAR",
+                "HKD",
+                "SGD",
+                "THB",
+                "MXN",
+                "IDR",
+                "KRW",
+                "PLN",
+                "ISK",
+                "KWD",
+                "PHP",
+                "MYR",
+                "INR",
+                "TWD",
+                "SAR",
+                "AED",
+                "RUB",
+                "ILS",
+                "ARS",
+                "CLP",
+                "COP",
+                "PEN",
+                "UYU"
+              ],
+              "isTransparent": false,
+              "colorTheme": "light",
+              "locale": "in"
+            }
+              </script>
+            </div>
+            <!-- TradingView Widget END -->
+                    
+         """,
+        height=65000,
+        width=1200,
+    )
 
+if Dashboard == 'Quant Report':
+    qs.extend_pandas()
+    qticker_list = pd.read_csv(
+        'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
+        error_bad_lines=False)
+    QtSymbol = st.selectbox('Stock ticker', qticker_list)
+    stock_returns = qs.utils.download_returns(QtSymbol)
+    sharpe = qs.stats.sharpe(stock_returns)
+    st.write(sharpe)
+    qs.reports.html(stock_returns, QtSymbol)
+    HtmlFile = open("tearsheet.html", 'r', encoding='utf-8')
+    source_code = HtmlFile.read()
+    print(source_code)
+    components.html(source_code)
 
+if Dashboard == 'Startup Crunch':
+    jig = st.text_input("Symbol", value='Startup', max_chars=15)
+    url = ('https://newsapi.org/v2/everything?'
+           f'q={jig}&'
+           'domains= indiatimes.com,vccircle.com,techcrunch.com,moneycontrol.com,business-standard.com,livemint.com&'
+           'apiKey=e9281231a2bb483caaeccce82d9a235d')
+
+    response = requests.get(url)
+    articles = json.loads(response.text)['articles']
+    for articles in articles:
+        st.header(articles["title"])
+        st.write(articles["publishedAt"], articles["author"])
+        st.markdown(articles["description"])
+        st.image(articles["urlToImage"])
+        with st.expander('Expand'):
+            st.write(articles["content"])
 
 st.sidebar.write("Created By Nitin Kohli")
 st.sidebar.write("[LinkedIn](https://www.linkedin.com/in/nitin-kohli/)")
