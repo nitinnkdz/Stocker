@@ -1,4 +1,5 @@
 import time
+from st_on_hover_tabs import on_hover_tabs
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
@@ -37,8 +38,6 @@ from yfinance import Ticker
 import quantstats as qs
 
 st.set_page_config(layout="wide")
-
-
 def add_bg_from_url():
     st.markdown(
         f"""
@@ -56,25 +55,36 @@ def add_bg_from_url():
 
 add_bg_from_url()
 
+st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
+
+with st.sidebar:
+    tabs = on_hover_tabs(
+        tabName=["Home", "Market Overview", "Stocks", "News & Analysis", "Social Sentiments", "ETF & Mutual Funds",
+                 "Startup Crunch", 'ML-Forecast', 'Portfolio', "FOREX-Map"], default_choice=0,
+        iconName=['home', 'dashboard', 'candlestick_chart','feed','track_changes','receipt','economy','data_exploration','calculate','currency_rupee'],
+        styles={'navtab': {'background-color': '#111',
+                                    'color' : '#818181',
+                                    'font-size': '18px',
+                                    'transition': '.3s',
+                                    'white-space': 'nowrap',
+                                    'text-transform': 'uppercase'},
+                'tabOptionsStyle': {':hover :hover': {'color' : 'red',
+                                                      'cursor': 'pointer'}},
+                'iconStyle'      : {'position'  : 'fixed',
+                                    'left'      : '7.5px',
+                                    'text-align': 'left'},
+                'tabStyle'       : {'list-style-type': 'none',
+                                    'margin-bottom'  : '30px',
+                                    'padding-left'   : '30px'}},
+        key="1")
+
+
 yf.pdr_override()
 auth = tweepy.OAuthHandler(config.TWITTER_CONSUMER_KEY, config.TWITTER_CONSUME_SECRET)
 auth.set_access_token(config.TWITTER_ACCESS_TOKEN, config.TWITTER_ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
-with st.sidebar:
-    Dashboard = option_menu("Dashboard", [
-        "Home", "Market Overview", "Stocks", "News & Analysis", "Social Sentiments", "ETF & Mutual Funds",
-        "Startup Crunch",
-        'ML-Forecast', 'Portfolio', "FOREX-Map", 'Quant Report'], menu_icon="cast",
-                            default_index=0,
-                            styles={
-                                "nav-link"         : {"font-size"    : "16px", "text-align": "left", "margin": "0px",
-                                                      "--hover-color": "#eee"},
-                                "nav-link-selected": {"background-color": "#2C3845"},
-                            }
-                            )
-
-if Dashboard == "Home":
+if tabs == "Home":
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -95,9 +105,7 @@ if Dashboard == "Home":
                 such as Iex Cloud, Finnhub, and Polygon.io to provide various information \
                 about a specific symbol.This features trading-view to analyse charts as well. ")
 
-
-
-if Dashboard == 'Stocks':
+if tabs == 'Stocks':
     selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
     if selected1 == 'Ticker-Info':
@@ -112,49 +120,48 @@ if Dashboard == 'Stocks':
         st.markdown(string_logo, unsafe_allow_html=True)
 
         components.html(
-            f"""
-            <!-- TradingView Widget BEGIN -->
-            <div class="tradingview-widget-container">
-              <div id="tradingview_5861a"></div>
-              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/AAPL/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-              <script type="text/javascript">
-              new TradingView.MediumWidget(
-              {{
-              "symbols": [
-                [
-                  "{tickerSymbol}",     
-                ]
-              ],
-              "chartOnly": true,
-              "width": 1000,
-              "height": 500,
-              "locale": "in",
-              "colorTheme": "dark",
-              "isTransparent": true,
-              "autosize": false,
-              "showVolume": false,
-              "hideDateRanges": false,
-              "scalePosition": "left",
-              "scaleMode": "Normal",
-              "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-              "noTimeScale": false,
-              "valuesTracking": "1",
-              "chartType": "area",
-              "fontColor": "#787b86",
-              "gridLineColor": "rgba(240, 243, 250, 0.06)",
-              "lineColor": "rgba(242, 54, 69, 1)",
-              "topColor": "rgba(247, 82, 95, 0.3)",
-              "bottomColor": "rgba(247, 124, 128, 0)",
-              "lineWidth": 4,
-              "container_id": "tradingview_5861a"
-            }}
-              );
-              </script>
-            </div>
-            <!-- TradingView Widget END -->
-    
-               """,
+                f"""
+                    <!-- TradingView Widget BEGIN -->
+                    <div class="tradingview-widget-container">
+                      <div id="tradingview_c0b7d"></div>
+                      <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{tickerSymbol}/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
+                      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                      <script type="text/javascript">
+                      new TradingView.MediumWidget(
+                      {{
+                      "symbols": [
+                        [
+                          "{tickerSymbol}",
+                        ]
+                      ],
+                      "chartOnly": true,
+                      "width": 1000,
+                      "height": 500,
+                      "locale": "in",
+                      "colorTheme": "dark",
+                      "isTransparent": true,
+                      "autosize": false,
+                      "showVolume": false,
+                      "hideDateRanges": false,
+                      "scalePosition": "right",
+                      "scaleMode": "Normal",
+                      "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                      "noTimeScale": false,
+                      "valuesTracking": "1",
+                      "chartType": "area",
+                      "fontColor": "#787b86",
+                      "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                      "lineColor": "",
+                      "topColor": "rgba(41, 98, 255, 0.3)",
+                      "bottomColor": "rgba(41, 98, 255, 0)",
+                      "lineWidth": 3,
+                      "container_id": "tradingview_c0b7d"
+                    }}
+                      );
+                      </script>
+                    </div>
+                    <!-- TradingView Widget END -->
+                """,
             height=610, width=980,
         )
 
@@ -329,7 +336,7 @@ if Dashboard == 'Stocks':
             st.markdown('dividendPerShare')
             st.write(live_analysis[0]['dividendPerShareTTM'])
 
-if Dashboard == 'News & Analysis':
+if tabs == 'News & Analysis':
     selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
 
@@ -483,7 +490,7 @@ if Dashboard == 'News & Analysis':
         """
         st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-if Dashboard == 'Market Overview':
+if tabs == 'Market Overview':
     components.html(
         """
         <!-- TradingView Widget BEGIN -->
@@ -946,7 +953,7 @@ if Dashboard == 'Market Overview':
         height=1100, width=1100,
     )
 
-if Dashboard == 'Social Sentiments':
+if tabs == 'Social Sentiments':
     selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
 
@@ -994,7 +1001,7 @@ if Dashboard == 'Social Sentiments':
                 st.write(cashtags)
                 st.write(submission.title)
 
-if Dashboard == 'ML-Forecast':
+if tabs == 'ML-Forecast':
     selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
                             menu_icon="cast", default_index=0, orientation="horizontal")
     if selected3 == 'Stocks':
@@ -1173,7 +1180,7 @@ if Dashboard == 'ML-Forecast':
             fig2 = m.plot_components(forecast)
             st.write(fig2)
 
-if Dashboard == 'Portfolio':
+if tabs == 'Portfolio':
     symbol1list = pd.read_csv(
         'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
         error_bad_lines=False)
@@ -1247,7 +1254,7 @@ if Dashboard == 'Portfolio':
     st.write("Volatility: ", data[1])
     st.write("Sharpe Ratio: ", data[2])
 
-if Dashboard == 'ETF & Mutual Funds':
+if tabs == 'ETF & Mutual Funds':
     selected2 = option_menu(None, ["ETF", "Mutual Funds", ],
                             menu_icon="cast", default_index=0, orientation="horizontal")
     if selected2 == 'ETF':
@@ -1261,50 +1268,48 @@ if Dashboard == 'ETF & Mutual Funds':
 
         components.html(
             f"""
-        <!-- TradingView Widget BEGIN -->
-        <div class="tradingview-widget-container">
-          <div id="tradingview_5861a"></div>
-          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/AAPL/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-          <script type="text/javascript">
-          new TradingView.MediumWidget(
-          {{
-          "symbols": [
-            [
-              "{option}",     
-            ]
-          ],
-          "chartOnly": true,
-          "width": 1000,
-          "height": 500,
-          "locale": "in",
-          "colorTheme": "dark",
-          "isTransparent": true,
-          "autosize": false,
-          "showVolume": false,
-          "hideDateRanges": false,
-          "scalePosition": "left",
-          "scaleMode": "Normal",
-          "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-          "noTimeScale": false,
-          "valuesTracking": "1",
-          "chartType": "area",
-          "fontColor": "#787b86",
-          "gridLineColor": "rgba(240, 243, 250, 0.06)",
-          "lineColor": "rgba(242, 54, 69, 1)",
-          "topColor": "rgba(247, 82, 95, 0.3)",
-          "bottomColor": "rgba(247, 124, 128, 0)",
-          "lineWidth": 4,
-          "container_id": "tradingview_5861a"
-        }}
-          );
-          </script>
-        </div>
-        <!-- TradingView Widget END -->
-
-                   """,
+                            <!-- TradingView Widget BEGIN -->
+                            <div class="tradingview-widget-container">
+                              <div id="tradingview_c0b7d"></div>
+                              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{option}/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
+                              <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                              <script type="text/javascript">
+                              new TradingView.MediumWidget(
+                              {{
+                              "symbols": [
+                                [
+                                  "{option}",
+                                ]
+                              ],
+                              "chartOnly": true,
+                              "width": 1000,
+                              "height": 500,
+                              "locale": "in",
+                              "colorTheme": "dark",
+                              "isTransparent": true,
+                              "autosize": false,
+                              "showVolume": false,
+                              "hideDateRanges": false,
+                              "scalePosition": "right",
+                              "scaleMode": "Normal",
+                              "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                              "noTimeScale": false,
+                              "valuesTracking": "1",
+                              "chartType": "area",
+                              "fontColor": "#787b86",
+                              "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                              "lineColor": "",
+                              "topColor": "rgba(41, 98, 255, 0.3)",
+                              "bottomColor": "rgba(41, 98, 255, 0)",
+                              "lineWidth": 3,
+                              "container_id": "tradingview_c0b7d"
+                            }}
+                              );
+                              </script>
+                            </div>
+                            <!-- TradingView Widget END -->
+                        """,
             height=610, width=980,
-
         )
 
         etf_string_summary = etfData.info['longBusinessSummary']
@@ -1411,7 +1416,7 @@ if Dashboard == 'ETF & Mutual Funds':
         mf_equity_holdings = mf_data.info['equityHoldings']
         st.write(mf_equity_holdings)
 
-if Dashboard == 'FOREX-Map':
+if tabs == 'FOREX-Map':
     with st.spinner('Wait for it...'):
         time.sleep(5)
         st.success('Done!')
@@ -1476,7 +1481,7 @@ if Dashboard == 'FOREX-Map':
         width=1200,
     )
 
-if Dashboard == 'Quant Report':
+if tabs == 'Quant Report':
     qs.extend_pandas()
     qticker_list = pd.read_csv(
         'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
@@ -1491,7 +1496,7 @@ if Dashboard == 'Quant Report':
     print(source_code)
     components.html(source_code)
 
-if Dashboard == 'Startup Crunch':
+if tabs == 'Startup Crunch':
     jig = st.text_input("Symbol", value='Startup', max_chars=15)
     url = ('https://newsapi.org/v2/everything?'
            f'q={jig}&'
@@ -1508,5 +1513,4 @@ if Dashboard == 'Startup Crunch':
         with st.expander('Expand'):
             st.write(articles["content"])
 
-st.sidebar.write("Created By Nitin Kohli")
-st.sidebar.write("[LinkedIn](https://www.linkedin.com/in/nitin-kohli/)")
+
