@@ -950,7 +950,7 @@ if tabs == 'Market Overview':
 </div>
 <!-- TradingView Widget END -
    """,
-        height=1250, width=1500,
+        height=1250, width=2000,
     )
 
 if tabs == 'Social Sentiments':
