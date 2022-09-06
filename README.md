@@ -1,1 +1,1 @@
-# Stocks-Dashboard
+# A Quantitative tool for Traders
