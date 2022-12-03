@@ -22,7 +22,6 @@ import cufflinks as cf
 from cryptocmd import CmcScraper
 import json
 from PIL import Image
-import time
 import pickle
 import pandas_datareader as web
 from datetime import datetime, date
