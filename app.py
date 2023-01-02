@@ -1,40 +1,31 @@
+import json
 import time
-from st_on_hover_tabs import on_hover_tabs
+from datetime import datetime, date
+from urllib.request import urlopen, Request
+import cufflinks as cf
+import finnhub
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import quantstats as qs
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
-from streamlit_option_menu import option_menu
-import pandas as pd
-import numpy as np
 import tweepy
-import config
-import finnhub
+import yfinance as yf
+from PIL import Image
+from bs4 import BeautifulSoup
+from cryptocmd import CmcScraper
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from plotly import graph_objs as go
 from prophet import Prophet
 from prophet.plot import plot_plotly
-from plotly import graph_objs as go
-import plotly.express as px
-from urllib.request import urlopen, Request
-from bs4 import BeautifulSoup
-import requests
-import redis
-import yfinance as yf
-from yahoofinancials import YahooFinancials
-import cufflinks as cf
-from cryptocmd import CmcScraper
-import json
-from PIL import Image
-import pickle
-import pandas_datareader as web
-from datetime import datetime, date
-from datetime import timedelta
-from scipy.optimize import minimize
-import nltk
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
-from nltk.stem import WordNetLemmatizer
 from psaw import PushshiftAPI
-from yfinance import Ticker
-import quantstats as qs
+from scipy.optimize import minimize
+from st_on_hover_tabs import on_hover_tabs
+from streamlit_option_menu import option_menu
+
+import config
 
 st.set_page_config(layout="wide")
 def add_bg_from_url():
@@ -42,7 +33,7 @@ def add_bg_from_url():
         f"""
          <style>
          .stApp {{
-             background-image: url("https://images.unsplash.com/photo-1549421263-6064833b071b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1365&q=80");
+             background-image: url("https://img.freepik.com/free-photo/colorful-abstract-nebula-space-background_53876-111356.jpg?w=1380&t=st=1672665720~exp=1672666320~hmac=a6c3ad8db60304d3f7602467b43010b9113947c97c3403bb678238137f2751fa");
              background-attachment: fixed;
              background-size: cover
          }}
