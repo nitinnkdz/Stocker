@@ -27,13 +27,15 @@ from streamlit_option_menu import option_menu
 
 import config
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Timeline STOCKER", layout="wide")
+
+
 def add_bg_from_url():
     st.markdown(
         f"""
          <style>
          .stApp {{
-             background-image: url("https://img.freepik.com/free-photo/colorful-abstract-nebula-space-background_53876-111356.jpg?w=1380&t=st=1672665720~exp=1672666320~hmac=a6c3ad8db60304d3f7602467b43010b9113947c97c3403bb678238137f2751fa");
+             background-image: url("https://www.htmlcsscolor.com/preview/128x128/FFF1E5.png");
              background-attachment: fixed;
              background-size: cover
          }}
@@ -46,28 +48,27 @@ def add_bg_from_url():
 add_bg_from_url()
 
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
-
 with st.sidebar:
     tabs = on_hover_tabs(
         tabName=["Home", "Market Overview", "Stocks", "News & Analysis", "Social Sentiments", "ETF & Mutual Funds",
                  "Startup Crunch", 'ML-Forecast', 'Portfolio', "FOREX-Map"], default_choice=0,
-        iconName=['home', 'dashboard', 'candlestick_chart','feed','track_changes','receipt','economy','data_exploration','calculate','currency_rupee'],
+        iconName=['home', 'dashboard', 'candlestick_chart', 'feed', 'track_changes', 'receipt', 'economy',
+                  'data_exploration', 'calculate', 'currency_rupee'],
         styles={'navtab': {'background-color': '#111',
-                                    'color' : '#818181',
-                                    'font-size': '18px',
-                                    'transition': '.3s',
-                                    'white-space': 'nowrap',
-                                    'text-transform': 'uppercase'},
-                'tabOptionsStyle': {':hover :hover': {'color' : 'red',
+                           'color': '#818181',
+                           'font-size': '18px',
+                           'transition': '.2s',
+                           'white-space': 'nowrap',
+                           'text-transform': 'uppercase'},
+                'tabOptionsStyle': {':hover :hover': {'color': 'red',
                                                       'cursor': 'pointer'}},
-                'iconStyle'      : {'position'  : 'fixed',
-                                    'left'      : '7.5px',
-                                    'text-align': 'left'},
-                'tabStyle'       : {'list-style-type': 'none',
-                                    'margin-bottom'  : '30px',
-                                    'padding-left'   : '30px'}},
+                'iconStyle': {'position': 'fixed',
+                              'left': '7.5px',
+                              'text-align': 'left'},
+                'tabStyle': {'list-style-type': 'none',
+                             'margin-bottom': '30px',
+                             'padding-left': '30px'}},
         key="1")
-
 
 yf.pdr_override()
 auth = tweepy.OAuthHandler(config.TWITTER_CONSUMER_KEY, config.TWITTER_CONSUME_SECRET)
@@ -110,7 +111,7 @@ if tabs == 'Stocks':
         st.markdown(string_logo, unsafe_allow_html=True)
 
         components.html(
-                f"""
+            f"""
                     <!-- TradingView Widget BEGIN -->
                     <div class="tradingview-widget-container">
                       <div id="tradingview_c0b7d"></div>
@@ -481,467 +482,109 @@ if tabs == 'News & Analysis':
         st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if tabs == 'Market Overview':
-    components.html(
-        """
-        <!-- TradingView Widget BEGIN -->
-<div class="tradingview-widget-container">
-  <div class="tradingview-widget-container__widget"></div>
-  <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com" rel="noopener" target="_blank"><span class="blue-text">Cryptocurrencies</span></a> <span class="blue-text">and</span> <a href="https://in.tradingview.com" rel="noopener" target="_blank"><span class="blue-text">Economy</span></a> by TradingView</div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
-  {
-  "width": "800",
-  "height": "500",
-  "symbolsGroups": [
-    {
-      "name": "Indices",
-      "originalName": "Indices",
-      "symbols": [
-        {
-          "name": "FOREXCOM:SPXUSD",
-          "displayName": "S&P 500"
-        },
-        {
-          "name": "FOREXCOM:NSXUSD",
-          "displayName": "US 100"
-        },
-        {
-          "name": "FOREXCOM:DJI",
-          "displayName": "Dow 30"
-        },
-        {
-          "name": "INDEX:NKY",
-          "displayName": "Nikkei 225"
-        },
-        {
-          "name": "INDEX:DEU40",
-          "displayName": "DAX Index"
-        },
-        {
-          "name": "FOREXCOM:UKXGBP",
-          "displayName": "UK 100"
-        },
-        {
-          "name": "NSE:NIFTY",
-          "displayName": "Nifty 50"
-        },
-        {
-          "name": "INDEX:IBOV",
-          "displayName": "IBovespa"
-        },
-        {
-          "name": "INDEX:SMI",
-          "displayName": "SMI"
-        },
-        {
-          "name": "INDEX:CAC40",
-          "displayName": "CAC 40"
-        },
-        {
-          "name": "CURRENCYCOM:EU50",
-          "displayName": "Eurostoxx 50"
-        },
-        {
-          "name": "TVC:HSI",
-          "displayName": "HSI"
-        },
-        {
-          "name": "HOSE:VNINDEX",
-          "displayName": "VNI Index"
-        },
-        {
-          "name": "SET:SET",
-          "displayName": "SET"
-        },
-        {
-          "name": "OANDA:HK33HKD",
-          "displayName": "Hong Kong 33"
-        },
-        {
-          "name": "MOEX:IMOEX",
-          "displayName": "Russia"
-        },
-        {
-          "name": "OANDA:JP225USD",
-          "displayName": "JP 225"
-        },
-        {
-          "name": "KRX:KOSPI",
-          "displayName": "KOSPI"
-        },
-        {
-          "name": "BME:IBC",
-          "displayName": "Spain"
-        },
-        {
-          "name": "INDEX:SENSEX",
-          "displayName": "BSE SENSEX"
-        },
-        {
-          "name": "CRYPTOCAP:TOTAL",
-          "displayName": "CRYPTO"
-        },
-        {
-          "name": "NSE:BANKNIFTY",
-          "displayName": "Banknifty"
-        },
-        {
-          "name": "NSE:INDIAVIX",
-          "displayName": "India Vix"
-        }
-      ]
-    },
-    {
-      "name": "Futures",
-      "originalName": "Futures",
-      "symbols": [
-        {
-          "name": "TVC:GOLD",
-          "displayName": "Gold"
-        },
-        {
-          "name": "TVC:SILVER",
-          "displayName": "Silver"
-        },
-        {
-          "name": "CAPITALCOM:COPPER",
-          "displayName": "Copper"
-        },
-        {
-          "name": "TVC:USOIL",
-          "displayName": "Crude Oil"
-        },
-        {
-          "name": "TVC:UKOIL",
-          "displayName": "Brent Oil"
-        },
-        {
-          "name": "CURRENCYCOM:NATURALGAS",
-          "displayName": "Natural Gas"
-        },
-        {
-          "name": "NYMEX:RB1!",
-          "displayName": "Gasoline RBOB"
-        },
-        {
-          "name": "CBOT:ZW1!",
-          "displayName": " US wheat"
-        },
-        {
-          "name": "CBOT:ZC1!",
-          "displayName": "US Corn"
-        },
-        {
-          "name": "CBOT:ZS1!",
-          "displayName": "US soyabean"
-        },
-        {
-          "name": "ICEUS:KC1!",
-          "displayName": "coffee"
-        },
-        {
-          "name": "ICEUS:SB1!",
-          "displayName": "Sugar 11"
-        },
-        {
-          "name": "ICEUS:CT1!",
-          "displayName": "Cotton #2"
-        },
-        {
-          "name": "ICEEUR:C1!",
-          "displayName": "London Cocoa"
-        },
-        {
-          "name": "ICEUS:CC1!",
-          "displayName": "US Cocoa"
-        },
-        {
-          "name": "NYMEX:PL1!",
-          "displayName": "Platinum"
-        },
-        {
-          "name": "NYMEX:PA1!",
-          "displayName": "Palladium"
-        },
-        {
-          "name": "MOEX:AM1!",
-          "displayName": "Aluminium"
-        },
-        {
-          "name": "CME:LE1!",
-          "displayName": "Live Cattle"
-        },
-        {
-          "name": "CME:HET1!",
-          "displayName": "Lean Hogs"
-        },
-        {
-          "name": "COMEX:ZNC1!",
-          "displayName": "Zinc"
-        },
-        {
-          "name": "MOEX:NL1!",
-          "displayName": "Nickel"
-        },
-        {
-          "name": "COMEX:LED1!",
-          "displayName": "Lead"
-        }
-      ]
-    },
-    {
-      "name": "Bonds",
-      "originalName": "Bonds",
-      "symbols": [
-        {
-          "name": "CME:GE1!",
-          "displayName": "Eurodollar"
-        },
-        {
-          "name": "CBOT:ZB1!",
-          "displayName": "T-Bond"
-        },
-        {
-          "name": "CBOT:UB1!",
-          "displayName": "Ultra T-Bond"
-        },
-        {
-          "name": "EUREX:FGBL1!",
-          "displayName": "Euro Bund"
-        },
-        {
-          "name": "EUREX:FBTP1!",
-          "displayName": "Euro BTP"
-        },
-        {
-          "name": "EUREX:FGBM1!",
-          "displayName": "Euro BOBL"
-        },
-        {
-          "name": "TVC:US10Y",
-          "displayName": "US-10Y"
-        },
-        {
-          "name": "TVC:US30Y",
-          "displayName": "US-30Y"
-        },
-        {
-          "name": "TVC:US02Y",
-          "displayName": "US-O2Y"
-        },
-        {
-          "name": "TVC:JP10Y",
-          "displayName": "JP-10Y"
-        },
-        {
-          "name": "TVC:DE10Y",
-          "displayName": "DE-10Y"
-        },
-        {
-          "name": "TVC:GB10Y",
-          "displayName": "GB-10Y"
-        },
-        {
-          "name": "TVC:AU10Y",
-          "displayName": "AU-10Y"
-        },
-        {
-          "name": "TVC:CA10Y",
-          "displayName": "CA-10Y"
-        },
-        {
-          "name": "TVC:CN10Y",
-          "displayName": "CN-10Y"
-        },
-        {
-          "name": "TVC:IN10Y",
-          "displayName": "IN-10Y"
-        },
-        {
-          "name": "TVC:IT10Y",
-          "displayName": "IT-1OY"
-        },
-        {
-          "name": "TVC:NZ10Y",
-          "displayName": "NZ-10Y"
-        },
-        {
-          "name": "TVC:ZA10Y",
-          "displayName": "ZA-10Y"
-        },
-        {
-          "name": "TVC:BR10",
-          "displayName": "BR-10Y"
-        },
-        {
-          "name": "TVC:FR10",
-          "displayName": "FR-10Y"
-        },
-        {
-          "name": "TVC:ES10",
-          "displayName": "ES-10Y"
-        }
-      ]
-    },
-    {
-      "name": "Forex",
-      "originalName": "Forex",
-      "symbols": [
-        {
-          "name": "FX:EURUSD",
-          "displayName": "EUR/USD"
-        },
-        {
-          "name": "FX:GBPUSD",
-          "displayName": "GBP/USD"
-        },
-        {
-          "name": "FX:USDJPY",
-          "displayName": "USD/JPY"
-        },
-        {
-          "name": "FX:USDCHF",
-          "displayName": "USD/CHF"
-        },
-        {
-          "name": "FX:AUDUSD",
-          "displayName": "AUD/USD"
-        },
-        {
-          "name": "FX:USDCAD",
-          "displayName": "USD/CAD"
-        },
-        {
-          "name": "FX_IDC:USDINR",
-          "displayName": "USD/INR"
-        },
-        {
-          "name": "FX_IDC:GBPINR",
-          "displayName": "GBP/INR"
-        },
-        {
-          "name": "FX_IDC:EURINR",
-          "displayName": "EUR/INR"
-        },
-        {
-          "name": "FX:USDTRY",
-          "displayName": "USD/TRY"
-        },
-        {
-          "name": "FX:NZDUSD",
-          "displayName": "NZD/USD"
-        },
-        {
-          "name": "FX_IDC:USDRUB",
-          "displayName": "USD/RUB"
-        },
-        {
-          "name": "FX_IDC:USDCNY",
-          "displayName": "USD/CNY"
-        },
-        {
-          "name": "FX:EURNZD",
-          "displayName": "EURNZD"
-        },
-        {
-          "name": "FX_IDC:USDBRL",
-          "displayName": "USD/BRL"
-        },
-        {
-          "name": "FX:USDCNH",
-          "displayName": "USD/CNH"
-        }
-      ]
-    },
-    {
-      "name": "Cryptocurrencies",
-      "symbols": [
-        {
-          "name": "BINANCE:BTCUSDT",
-          "displayName": "Bitcoin"
-        },
-        {
-          "name": "BINANCE:ETHUSDT",
-          "displayName": "Ethereum"
-        },
-        {
-          "name": "BINANCE:SOLUSDT",
-          "displayName": "Sol"
-        },
-        {
-          "name": "BINANCE:ADAUSDT",
-          "displayName": "Cardano"
-        },
-        {
-          "name": "BINANCE:GMTUSDT",
-          "displayName": "GMT"
-        },
-        {
-          "name": "BINANCE:AVAXUSDT",
-          "displayName": "AVAX"
-        },
-        {
-          "name": "BINANCE:BNBUSDT",
-          "displayName": "Binance Coin"
-        },
-        {
-          "name": "BINANCE:DOTUSDT",
-          "displayName": "Dot"
-        },
-        {
-          "name": "BINANCE:SHIBUSDT",
-          "displayName": "Shib"
-        },
-        {
-          "name": "BINANCE:GALAUSDT",
-          "displayName": "Gala"
-        },
-        {
-          "name": "BINANCE:WAVESUSDT",
-          "displayName": "Waves"
-        },
-        {
-          "name": "BINANCE:ATOMUSDT",
-          "displayName": "Cosmos"
-        }
-      ]
-    },
-    {
-      "name": "Economy",
-      "symbols": [
-        {
-          "name": "ECONOMICS:USIRYY",
-          "displayName": "US INFLATION RATE"
-        },
-        {
-          "name": "FRED:UNRATE",
-          "displayName": "UNEMPLOYMENT RATE"
-        },
-        {
-          "name": "FRED:FEDFUNDS",
-          "displayName": "EFFECTIVE FEDRAL FUNDS RATE"
-        },
-        {
-          "name": "FRED:CPIAUCSL",
-          "displayName": "CPI"
-        },
-        {
-          "name": "FRED:BOGMBASE",
-          "displayName": "MONETARY BASE"
-        }
-      ]
-    }
-  ],
-  "showSymbolLogo": true,
-  "colorTheme": "dark",
-  "isTransparent": true,
-  "locale": "in"
-}
-  </script>
-</div>
-<!-- TradingView Widget END -
-   """,
-        height=1250, width=2000,
-    )
+    indicies, stocks, cryptoc, futures, forex = st.tabs(["Indicies", "stocks", "cryptoc", "futures", "forex"])
+    with indicies:
+        components.html(
+            """
+            <!-- TradingView Widget BEGIN -->
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/markets/indices/" rel="noopener" target="_blank"></a></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+              {
+              "title": "Indices",
+              "width": 1500,
+              "height": 550,
+              "locale": "in",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "showSymbolLogo": true,
+              "symbolsGroups": [
+                {
+                  "name": "US & Canada",
+                  "symbols": [
+                    {
+                      "name": "FOREXCOM:SPXUSD",
+                      "displayName": "S&P 500"
+                    },
+                    {
+                      "name": "FOREXCOM:NSXUSD",
+                      "displayName": "US 100"
+                    },
+                    {
+                      "name": "CME_MINI:ES1!",
+                      "displayName": "S&P 500"
+                    },
+                    {
+                      "name": "INDEX:DXY",
+                      "displayName": "U.S. Dollar Currency Index"
+                    },
+                    {
+                      "name": "FOREXCOM:DJI",
+                      "displayName": "Dow 30"
+                    }
+                  ]
+                },
+                {
+                  "name": "Europe",
+                  "symbols": [
+                    {
+                      "name": "INDEX:SX5E",
+                      "displayName": "Euro Stoxx 50"
+                    },
+                    {
+                      "name": "FOREXCOM:UKXGBP",
+                      "displayName": "UK 100"
+                    },
+                    {
+                      "name": "INDEX:DEU40",
+                      "displayName": "DAX Index"
+                    },
+                    {
+                      "name": "INDEX:CAC40",
+                      "displayName": "CAC 40 Index"
+                    },
+                    {
+                      "name": "INDEX:SMI",
+                      "displayName": "SWISS MARKET INDEX SMI® PRICE"
+                    }
+                  ]
+                },
+                {
+                  "name": "Asia/Pacific",
+                  "symbols": [
+                    {
+                      "name": "INDEX:NKY",
+                      "displayName": "Nikkei 225"
+                    },
+                    {
+                      "name": "INDEX:HSI",
+                      "displayName": "Hang Seng"
+                    },
+                    {
+                      "name": "BSE:SENSEX",
+                      "displayName": "BSE SENSEX"
+                    },
+                    {
+                      "name": "BSE:BSE500",
+                      "displayName": "S&P BSE 500 INDEX"
+                    },
+                    {
+                      "name": "INDEX:KSIC",
+                      "displayName": "Kospi Composite"
+                    }
+                  ]
+                }
+              ],
+              "colorTheme": "light"
+            }
+              </script>
+            </div>
+            <!-- TradingView Widget END -->
+            """,
+            height=1250, width=2000,
+        )
+
 
 if tabs == 'Social Sentiments':
     selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
@@ -1502,5 +1145,3 @@ if tabs == 'Startup Crunch':
         st.image(articles["urlToImage"])
         with st.expander('Expand'):
             st.write(articles["content"])
-
-
