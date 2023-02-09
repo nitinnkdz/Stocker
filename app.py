@@ -1,4 +1,6 @@
 import json
+import streamlit as st
+import streamlit.components.v1 as components
 import time
 from datetime import datetime, date
 from urllib.request import urlopen, Request
@@ -9,8 +11,6 @@ import pandas as pd
 import plotly.express as px
 import quantstats as qs
 import requests
-import streamlit as st
-import streamlit.components.v1 as components
 import tweepy
 import yfinance as yf
 from PIL import Image
@@ -24,10 +24,9 @@ from psaw import PushshiftAPI
 from scipy.optimize import minimize
 from st_on_hover_tabs import on_hover_tabs
 from streamlit_option_menu import option_menu
-
 import config
 
-st.set_page_config(page_title="Timeline STOCKER", layout="wide")
+st.set_page_config(page_title="STOCKER", layout="wide")
 
 
 def add_bg_from_url():
@@ -43,8 +42,6 @@ def add_bg_from_url():
          """,
         unsafe_allow_html=True
     )
-
-
 add_bg_from_url()
 
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
@@ -57,7 +54,7 @@ with st.sidebar:
         styles={'navtab': {'background-color': '#111',
                            'color': '#818181',
                            'font-size': '18px',
-                           'transition': '.2s',
+                           'transition': '.3s',
                            'white-space': 'nowrap',
                            'text-transform': 'uppercase'},
                 'tabOptionsStyle': {':hover :hover': {'color': 'red',
@@ -584,7 +581,6 @@ if tabs == 'Market Overview':
             """,
             height=1250, width=2000,
         )
-
 
 if tabs == 'Social Sentiments':
     selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
