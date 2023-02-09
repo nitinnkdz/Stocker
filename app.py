@@ -29,20 +29,7 @@ import config
 st.set_page_config(page_title="STOCKER", layout="wide")
 
 
-def add_bg_from_url():
-    st.markdown(
-        f"""
-         <style>
-         .stApp {{
-             background-image: url("https://www.htmlcsscolor.com/preview/128x128/FFF1E5.png");
-             background-attachment: fixed;
-             background-size: cover
-         }}
-         </style>
-         """,
-        unsafe_allow_html=True
-    )
-add_bg_from_url()
+
 
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 with st.sidebar:
