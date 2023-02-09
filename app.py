@@ -28,9 +28,6 @@ import config
 
 st.set_page_config(page_title="STOCKER", layout="wide")
 
-
-
-
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 with st.sidebar:
     tabs = on_hover_tabs(
