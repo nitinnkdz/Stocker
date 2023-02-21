@@ -28,6 +28,23 @@ import config
 
 st.set_page_config(page_title="STOCKER", layout="wide")
 
+def add_bg_from_url():
+    st.markdown(
+        f"""
+         <style>
+         .stApp {{
+             background-image: url("https://gradients.app/downloadangle/513/90/1500/800");
+             background-attachment: fixed;
+             background-size: cover
+         }}
+         
+         </style>
+         """,
+        unsafe_allow_html=True
+    )
+add_bg_from_url()
+
+st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 with st.sidebar:
     tabs = on_hover_tabs(
         tabName=["Home", "Market Overview", "Stocks", "News & Analysis", "Social Sentiments", "ETF & Mutual Funds",
@@ -80,17 +97,16 @@ if tabs == 'Stocks':
     selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
     if selected1 == 'Ticker-Info':
-        ticker_list = pd.read_csv(
-            'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-            error_bad_lines=False)
-        tickerSymbol = st.selectbox('Stock ticker', ticker_list)
+        tickerSymbol = st.text_input('Stock ticker')
         tickerData = yf.Ticker(tickerSymbol)
         tickerDf = tickerData.history(period="max")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.write(' ')
 
-        string_logo = '<img src=%s>' % tickerData.info['logo_url']
-        st.markdown(string_logo, unsafe_allow_html=True)
-
-        components.html(
+        with col2:
+            with col3:
+                components.html(
             f"""
                     <!-- TradingView Widget BEGIN -->
                     <div class="tradingview-widget-container">
@@ -106,44 +122,39 @@ if tabs == 'Stocks':
                         ]
                       ],
                       "chartOnly": true,
-                      "width": 1000,
-                      "height": 500,
+                      "width": "600",
+                      "height": "400",
                       "locale": "in",
-                      "colorTheme": "dark",
-                      "isTransparent": true,
+                      "colorTheme": "LIGHT",
                       "autosize": false,
-                      "showVolume": false,
+                      "showVolume": true,
                       "hideDateRanges": false,
-                      "scalePosition": "right",
+                      "hideMarketStatus": false,
+                      "hideSymbolLogo": false,
+                      "scalePosition": "left",
                       "scaleMode": "Normal",
                       "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                      "fontSize": "10",
                       "noTimeScale": false,
-                      "valuesTracking": "1",
+                      "valuesTracking": "2",
+                      "changeMode": "price-and-percent",
                       "chartType": "area",
-                      "fontColor": "#787b86",
-                      "gridLineColor": "rgba(240, 243, 250, 0.06)",
-                      "lineColor": "",
-                      "topColor": "rgba(41, 98, 255, 0.3)",
+                      "lineColor": "rgba(242, 54, 69, 1)",
+                      "topColor": "rgba(250, 161, 164, 0.3)",
                       "bottomColor": "rgba(41, 98, 255, 0)",
-                      "lineWidth": 3,
-                      "container_id": "tradingview_c0b7d"
+                      "lineWidth": 3
                     }}
                       );
                       </script>
                     </div>
-                    <!-- TradingView Widget END -->
                 """,
             height=610, width=980,
         )
 
-        string_name = tickerData.info['longName']
-        st.header('**%s**' % string_name)
-
-        sec = tickerData.info['sector']
-        st.write(sec)
-
-        string_summary = tickerData.info['longBusinessSummary']
-        st.info(string_summary)
+        url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
+        r = requests.get(url)
+        data = r.json()
+        st.write(data)
 
         st.header('**Ticker data**')
         st.write(tickerDf)

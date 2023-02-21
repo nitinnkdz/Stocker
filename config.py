@@ -17,3 +17,4 @@ screenname = [
     'IBDinvestors',
     'SJosephBurns',
 ]
+YOUR_API_KEY = '7062ab81fcd13c8807496957c0208206'
