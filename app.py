@@ -97,7 +97,7 @@ if tabs == 'Stocks':
     selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
     if selected1 == 'Ticker-Info':
-        tickerSymbol = st.text_input('Stock ticker')
+        tickerSymbol = st.text_input('Enter Tickers of the companies', ['AAPL'])
         tickerData = yf.Ticker(tickerSymbol)
         tickerDf = tickerData.history(period="max")
         col1, col2, col3 = st.columns(3)
