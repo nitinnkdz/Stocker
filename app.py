@@ -24,7 +24,9 @@ from psaw import PushshiftAPI
 from scipy.optimize import minimize
 from st_on_hover_tabs import on_hover_tabs
 from streamlit_option_menu import option_menu
+from openbb_terminal.sdk import openbb,TerminalStyle
 import config
+
 
 st.set_page_config(page_title="STOCKER", layout="wide")
 
@@ -33,7 +35,7 @@ def add_bg_from_url():
         f"""
          <style>
          .stApp {{
-             background-image: url("https://gradients.app/downloadangle/513/90/1500/800");
+             background-image: url("https://w0.peakpx.com/wallpaper/410/412/HD-wallpaper-plain-black-black.jpg");
              background-attachment: fixed;
              background-size: cover
          }}
@@ -52,7 +54,7 @@ with st.sidebar:
         iconName=['home', 'dashboard', 'candlestick_chart', 'feed', 'track_changes', 'receipt', 'economy',
                   'data_exploration', 'calculate', 'currency_rupee'],
         styles={'navtab': {'background-color': '#111',
-                           'color': '#818181',
+                           'color': '#f5f0f0',
                            'font-size': '18px',
                            'transition': '.3s',
                            'white-space': 'nowrap',
@@ -100,12 +102,22 @@ if tabs == 'Stocks':
         tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
         tickerData = yf.Ticker(tickerSymbol)
         tickerDf = tickerData.history(period="max")
-        col1, col2, col3 = st.columns(3)
+
+        col1, col2 = st.columns(2)
         with col1:
-            st.write(' ')
+            url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
+            r = requests.get(url)
+            dataaplfa = r.json()
+            st.header(dataaplfa['Name'])
+            st.write(dataaplfa['Description'])
+            st.markdown('**Exchange**')
+            st.write(dataaplfa['Exchange'])
+            st.markdown('**Sector**')
+            st.write(dataaplfa['Sector'])
+            st.markdown('**Industry**')
+            st.write(dataaplfa['Industry'])
 
         with col2:
-            with col3:
                 components.html(
             f"""
                     <!-- TradingView Widget BEGIN -->
@@ -121,28 +133,29 @@ if tabs == 'Stocks':
                           "{tickerSymbol}",
                         ]
                       ],
-                      "chartOnly": true,
-                      "width": "600",
-                      "height": "400",
-                      "locale": "in",
-                      "colorTheme": "LIGHT",
-                      "autosize": false,
-                      "showVolume": true,
-                      "hideDateRanges": false,
-                      "hideMarketStatus": false,
-                      "hideSymbolLogo": false,
-                      "scalePosition": "left",
-                      "scaleMode": "Normal",
-                      "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-                      "fontSize": "10",
-                      "noTimeScale": false,
-                      "valuesTracking": "2",
-                      "changeMode": "price-and-percent",
-                      "chartType": "area",
-                      "lineColor": "rgba(242, 54, 69, 1)",
-                      "topColor": "rgba(250, 161, 164, 0.3)",
-                      "bottomColor": "rgba(41, 98, 255, 0)",
-                      "lineWidth": 3
+                        "chartOnly": true,
+                              "width": 800,
+                              "height": 500,
+                              "locale": "in",
+                              "colorTheme": "dark",
+                              "isTransparent": true,
+                              "autosize": false,
+                              "showVolume": false,
+                              "hideDateRanges": false,
+                              "scalePosition": "right",
+                              "scaleMode": "Normal",
+                              "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                              "noTimeScale": false,
+                              "valuesTracking": "1",
+                              "chartType": "area",
+                              "fontColor": "#787b86",
+                              "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                              "backgroundColor": "rgba(0, 0, 0, 1)",
+                              "lineColor": "rgba(255, 152, 0, 1)",
+                              "topColor": "rgba(245, 124, 0, 0.3)",
+                              "bottomColor": "rgba(41, 98, 255, 0)",
+                              "lineWidth": 3,
+                              "container_id": "tradingview_c0b7d"
                     }}
                       );
                       </script>
@@ -150,11 +163,6 @@ if tabs == 'Stocks':
                 """,
             height=610, width=980,
         )
-
-        url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
-        r = requests.get(url)
-        data = r.json()
-        st.write(data)
 
         st.header('**Ticker data**')
         st.write(tickerDf)
@@ -319,7 +327,7 @@ if tabs == 'Stocks':
             st.write(live_analysis[0]['dividendPerShareTTM'])
 
 if tabs == 'News & Analysis':
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Analysis of News"],
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "TestOpenbb"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
 
     if selected1 == 'Market Crunch':
@@ -346,131 +354,57 @@ if tabs == 'News & Analysis':
             st.image(results['image_url'])
             st.write(results['article_url'])
 
-    if selected1 == 'Analysis of News':
-        def get_news(ticker):
-            url = finviz_url + ticker
-            req = Request(url=url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
-            response = urlopen(req)
-            # Read the contents of the file into 'html'
-            html = BeautifulSoup(response, "html.parser")
-            # Find 'news-table' in the Soup and load it into 'news_table'
-            news_table = html.find(id='news-table')
-            return news_table
+    if selected1 == 'TestOpenbb':
+        def color_negative_red(val):
+            if type(val) != 'str':
+                color = 'green' if val > 0 else 'red'
+                return f'color: {color}'
 
+        st.title('openbb.economy')
 
-        # parse news into dataframe
-        def parse_news(news_table):
-            global parsed_news_df
-            parsed_news = []
+        col1, col2 = st.columns(2)
 
-            for x in news_table.findAll('tr'):
-                # read the text from each tr tag into text
-                # get text from a only
-                text = x.a.get_text()
-                # splite text in the td tag into a list
-                date_scrape = x.td.text.split()
-                # if the length of 'date_scrape' is 1, load 'time' as the only element
+        with col1:
+            st.subheader('openbb.economy.currencies')
+            data = openbb.economy.currencies()
+            data[['Chng']] = data[['Chng']].apply(pd.to_numeric)
+            st.dataframe(data.style.applymap(color_negative_red, subset=['Chng']))
 
-                if len(date_scrape) == 1:
-                    time = date_scrape[0]
+        with col2:
+            st.subheader('openbb.economy.usbonds')
+            data = openbb.economy.usbonds()
+            data[data.columns[1]] = data[data.columns[1]].apply(pd.to_numeric)
+            data[data.columns[2]] = data[data.columns[2]].apply(pd.to_numeric)
+            data[data.columns[3]] = data[data.columns[3]].apply(pd.to_numeric)
 
-                # else load 'date' as the 1st element and 'time' as the second
-                else:
-                    date = date_scrape[0]
-                    time = date_scrape[1]
+            columns = data.columns[3]
 
-                # Append ticker, date, time and headline as a list to the 'parsed_news' list
-                parsed_news.append([date, time, text])
-                # Set column names
-                columns = ['date', 'time', 'headline']
-                # Convert the parsed_news list into a DataFrame called 'parsed_and_scored_news'
-                parsed_news_df = pd.DataFrame(parsed_news, columns=columns)
-                # Create a pandas datetime object from the strings in 'date' and 'time' column
-                parsed_news_df['datetime'] = pd.to_datetime(parsed_news_df['date'] + ' ' + parsed_news_df['time'])
+            st.dataframe(data.style.applymap(color_negative_red, subset=[columns]))
 
-            return parsed_news_df
+        col1, col2 = st.columns(2)
 
+        with col1:
+            st.subheader('openbb.economy.macro_countries')
+            countries = pd.DataFrame.from_dict(openbb.economy.macro_countries(), orient='index')
+            st.dataframe(countries)
 
-        def score_news(parsed_news_df):
-            # Instantiate the sentiment intensity analyzer
-            vader = SentimentIntensityAnalyzer()
+        with col2:
+            st.subheader('openbb.economy.indices')
+            data = openbb.economy.indices()
 
-            # Iterate through the headlines and get the polarity scores using vader
-            scores = parsed_news_df['headline'].apply(vader.polarity_scores).tolist()
+            data[['Chg']] = data[['Chg']].apply(pd.to_numeric)
 
-            # Convert the 'scores' list of dicts into a DataFrame
-            scores_df = pd.DataFrame(scores)
+            st.dataframe(data.style.applymap(color_negative_red, subset=['Chg']))
 
-            # Join the DataFrames of the news and the list of dicts
-            parsed_and_scored_news = parsed_news_df.join(scores_df, rsuffix='_right')
-            parsed_and_scored_news = parsed_and_scored_news.set_index('datetime')
-            parsed_and_scored_news = parsed_and_scored_news.drop(['date', 'time'], 1)
-            parsed_and_scored_news = parsed_and_scored_news.rename(columns={"compound": "sentiment_score"})
+        data = openbb.economy.treasury()
+        st.subheader('openbb.economy.treasury')
+        theme = TerminalStyle("dark", "dark", "dark")
+        st.line_chart(data=data, x=None, y=None, width=0, height=0, use_container_width=True)
 
-            return parsed_and_scored_news
+        st.subheader('openbb.economy.events')
+        data = openbb.economy.events()
+        st.dataframe(data)
 
-
-        def plot_hourly_sentiment(parsed_and_scored_news, ticker):
-
-            # Group by date and ticker columns from scored_news and calculate the mean
-            mean_scores = parsed_and_scored_news.resample('H').mean()
-
-            # Plot a bar chart with plotly
-            fig = px.bar(mean_scores, x=mean_scores.index, y='sentiment_score',
-                         title=ticker + ' Hourly Sentiment Scores')
-            return fig  # instead of using fig.show(), we return fig and turn it into a graphjson object for displaying in web page later
-
-
-        def plot_daily_sentiment(parsed_and_scored_news, ticker):
-
-            # Group by date and ticker columns from scored_news and calculate the mean
-            mean_scores = parsed_and_scored_news.resample('D').mean()
-
-            # Plot a bar chart with plotly
-            fig = px.bar(mean_scores, x=mean_scores.index, y='sentiment_score',
-                         title=ticker + ' Daily Sentiment Scores')
-            return fig  # instead of using fig.show(), we return fig and turn it into a graphjson object for displaying in web page later
-
-
-        # for extracting data from finviz
-        finviz_url = 'https://finviz.com/quote.ashx?t='
-
-        st.header("Stock News Sentiment Analyzer")
-
-        ticker = st.text_input('Enter Stock Ticker', '').upper()
-
-        try:
-            st.subheader("Hourly and Daily Sentiment of {} Stock".format(ticker))
-            news_table = get_news(ticker)
-            parsed_news_df = parse_news(news_table)
-            parsed_and_scored_news = score_news(parsed_news_df)
-            fig_hourly = plot_hourly_sentiment(parsed_and_scored_news, ticker)
-            fig_daily = plot_daily_sentiment(parsed_and_scored_news, ticker)
-
-            st.plotly_chart(fig_hourly)
-            st.plotly_chart(fig_daily)
-
-            description = """
-        		The above chart averages the sentiment scores of {} stock hourly and daily.
-        		The table below gives each of the most recent headlines of the stock and the negative, neutral, positive and an aggregated sentiment score.
-        		The news headlines are obtained from the FinViz website.
-        		Sentiments are given by the nltk.sentiment.vader Python library.
-        		""".format(ticker)
-
-            st.write(description)
-            st.table(parsed_and_scored_news)
-
-        except:
-            st.write("Enter a correct stock ticker, e.g. 'AAPL' above and hit Enter.")
-
-        hide_streamlit_style = """
-        <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        </style>
-        """
-        st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if tabs == 'Market Overview':
     indicies, stocks, cryptoc, futures, forex = st.tabs(["Indicies", "stocks", "cryptoc", "futures", "forex"])
@@ -484,12 +418,8 @@ if tabs == 'Market Overview':
               <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
               {
               "title": "Indices",
-              "width": 1500,
-              "height": 550,
-              "locale": "in",
-              "colorTheme": "dark",
-              "isTransparent": true,
-              "showSymbolLogo": true,
+              "width": 1250,
+              "height": 750,
               "symbolsGroups": [
                 {
                   "name": "US & Canada",
@@ -567,7 +497,10 @@ if tabs == 'Market Overview':
                   ]
                 }
               ],
-              "colorTheme": "light"
+                "showSymbolLogo": true,
+                "colorTheme": "dark",
+                "isTransparent": true,
+                "locale": "in"
             }
               </script>
             </div>
@@ -575,6 +508,148 @@ if tabs == 'Market Overview':
             """,
             height=1250, width=2000,
         )
+        with cryptoc:
+            components.html(
+                """
+                 <!-- TradingView Widget BEGIN -->
+                    <div class="tradingview-widget-container">
+                      <div class="tradingview-widget-container__widget"></div>
+                      <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/markets/cryptocurrencies/" rel="noopener" target="_blank"><span class="blue-text"></span></a> </div>
+                      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+                      {
+                      "title": "Cryptocurrencies",
+                      "title_raw": "Cryptocurrencies",
+                      "title_link": "/markets/cryptocurrencies/prices-all/",
+                      "width": 1250,
+                      "height": 750,
+                      "locale": "in",
+                      "showSymbolLogo": true,
+                      "symbolsGroups": [
+                        {
+                          "name": "Overview",
+                          "symbols": [
+                            {
+                              "name": "CRYPTOCAP:TOTAL"
+                            },
+                            {
+                              "name": "BITSTAMP:BTCUSD"
+                            },
+                            {
+                              "name": "BITSTAMP:ETHUSD"
+                            },
+                            {
+                              "name": "FTX:SOLUSD"
+                            },
+                            {
+                              "name": "BINANCE:AVAXUSD"
+                            },
+                            {
+                              "name": "COINBASE:UNIUSD"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Bitcoin",
+                          "symbols": [
+                            {
+                              "name": "BITSTAMP:BTCUSD"
+                            },
+                            {
+                              "name": "COINBASE:BTCEUR"
+                            },
+                            {
+                              "name": "COINBASE:BTCGBP"
+                            },
+                            {
+                              "name": "BITFLYER:BTCJPY"
+                            },
+                            {
+                              "name": "CEXIO:BTCRUB"
+                            },
+                            {
+                              "name": "CME:BTC1!"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Ethereum",
+                          "symbols": [
+                            {
+                              "name": "BITSTAMP:ETHUSD"
+                            },
+                            {
+                              "name": "KRAKEN:ETHEUR"
+                            },
+                            {
+                              "name": "COINBASE:ETHGBP"
+                            },
+                            {
+                              "name": "BITFLYER:ETHJPY"
+                            },
+                            {
+                              "name": "BINANCE:ETHBTC"
+                            },
+                            {
+                              "name": "BINANCE:ETHUSDT"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Solana",
+                          "symbols": [
+                            {
+                              "name": "FTX:SOLUSD"
+                            },
+                            {
+                              "name": "BINANCE:SOLEUR"
+                            },
+                            {
+                              "name": "COINBASE:SOLGBP"
+                            },
+                            {
+                              "name": "BINANCE:SOLBTC"
+                            },
+                            {
+                              "name": "HUOBI:SOLETH"
+                            },
+                            {
+                              "name": "BINANCE:SOLUSDT"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Uniswap",
+                          "symbols": [
+                            {
+                              "name": "COINBASE:UNIUSD"
+                            },
+                            {
+                              "name": "KRAKEN:UNIEUR"
+                            },
+                            {
+                              "name": "COINBASE:UNIGBP"
+                            },
+                            {
+                              "name": "BINANCE:UNIBTC"
+                            },
+                            {
+                              "name": "KRAKEN:UNIETH"
+                            },
+                            {
+                              "name": "BINANCE:UNIUSDT"
+                            }
+                          ]
+                        }
+                      ],
+                       "colorTheme": "dark",
+                       "isTransparent": true
+                    }
+                      </script>
+                    </div>
+                    <!-- TradingView Widget END -->
+                """,
+                height=1250, width=2000,
+ )
 
 if tabs == 'Social Sentiments':
     selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
