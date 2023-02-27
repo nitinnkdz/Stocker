@@ -28,12 +28,12 @@ pickleshare==0.7.5
 pillow==9.4.0
 plotly
 prophet
-psaw==0.1.0
+psaw
 pyarrow==11.0.0
 pychatgpt==0.4.3.1
 pycoingecko==2.3.0
 quantlib
-quantstats==0.0.59
+quantstats
 requests==2.28.1
 scikit-learn
 scipy
@@ -47,11 +47,11 @@ streamlit-aggrid==0.3.3
 streamlit-on-hover-tabs==1.0.1
 streamlit-option-menu==0.3.2
 streamlit-timeline==0.0.2
-ta==0.10.2
-tablib==3.3.0
+ta
+tablib
 tenacity==7.0.0
 tweepy==4.12.1
 urllib3==1.26.14
-valinvest==0.0.2
-yfinance==0.2.10
+valinvest
+yfinance
 
