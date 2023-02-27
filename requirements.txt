@@ -13,7 +13,7 @@ google-api-python-client==2.74.0
 google-auth==2.16.0
 google-auth-httplib2==0.1.0
 google-cloud==0.34.0
-google-cloud-vision==3.3.1==
+google-cloud-vision==3.3.1
 googleapis-common-protos==1.58.0
 holidays==0.18
 korean_lunar_calendar==0.3.1
@@ -27,13 +27,10 @@ pandas==1.4.3
 pandas-datareader==0.10.0
 pickleshare==0.7.5
 pillow==9.4.0
-pip==22.3.1
 plotly==5.11.0
 prophet==1.1.1
 psaw==0.1.0
 pyarrow==11.0.0
-pyasn1==0.4.8
-pyasn1-modules==0.2.8
 pychatgpt==0.4.3.1
 pycoingecko==2.3.0
 quantlib==1.28
