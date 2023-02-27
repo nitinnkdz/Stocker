@@ -17,7 +17,6 @@ google-cloud-vision==3.3.1
 googleapis-common-protos==1.58.0
 holidays==0.18
 korean_lunar_calendar==0.3.1
-matplotlib-base==3.6.20
 matplotlib-inline==0.1.6
 nltk==3.8.1
 numpy==1.23.2
@@ -39,7 +38,6 @@ requests==2.28.1
 scikit-learn==1.2.0
 scipy==1.9.3
 seaborn==0.12.2
-seaborn-base==0.12.2
 selenium==4.7.2
 setuptools==64.0.2
 setuptools-git==1.2
@@ -56,4 +54,4 @@ tweepy==4.12.1
 urllib3==1.26.14
 valinvest==0.0.2
 yfinance==0.2.10
-zlib==1.2.13
+
