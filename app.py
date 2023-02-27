@@ -1,4 +1,6 @@
 import json
+
+import streamlit
 import streamlit as st
 import streamlit.components.v1 as components
 import time
@@ -24,11 +26,13 @@ from psaw import PushshiftAPI
 from scipy.optimize import minimize
 from st_on_hover_tabs import on_hover_tabs
 from streamlit_option_menu import option_menu
-from openbb_terminal.sdk import openbb,TerminalStyle
+from openbb_terminal.sdk import openbb, TerminalStyle
+from openbb_terminal.config_terminal import theme
 import config
 
-
 st.set_page_config(page_title="STOCKER", layout="wide")
+st.set_option('deprecation.showPyplotGlobalUse', False)
+
 
 def add_bg_from_url():
     st.markdown(
@@ -44,6 +48,8 @@ def add_bg_from_url():
          """,
         unsafe_allow_html=True
     )
+
+
 add_bg_from_url()
 
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
@@ -101,7 +107,7 @@ if tabs == 'Stocks':
     if selected1 == 'Ticker-Info':
         tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
         tickerData = yf.Ticker(tickerSymbol)
-        tickerDf = tickerData.history(period="max")
+        tick = pd.DataFrame(tickerData.history(period="max"))
 
         col1, col2 = st.columns(2)
         with col1:
@@ -116,10 +122,9 @@ if tabs == 'Stocks':
             st.write(dataaplfa['Sector'])
             st.markdown('**Industry**')
             st.write(dataaplfa['Industry'])
-
         with col2:
-                components.html(
-            f"""
+            components.html(
+                f"""
                     <!-- TradingView Widget BEGIN -->
                     <div class="tradingview-widget-container">
                       <div id="tradingview_c0b7d"></div>
@@ -151,7 +156,7 @@ if tabs == 'Stocks':
                               "fontColor": "#787b86",
                               "gridLineColor": "rgba(240, 243, 250, 0.06)",
                               "backgroundColor": "rgba(0, 0, 0, 1)",
-                              "lineColor": "rgba(255, 152, 0, 1)",
+                              "lineColor": "rgb(253,128,0)",
                               "topColor": "rgba(245, 124, 0, 0.3)",
                               "bottomColor": "rgba(41, 98, 255, 0)",
                               "lineWidth": 3,
@@ -161,30 +166,71 @@ if tabs == 'Stocks':
                       </script>
                     </div>
                 """,
-            height=610, width=980,
-        )
+                height=610, width=980,
+            )
 
-        st.header('**Ticker data**')
-        st.write(tickerDf)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader('**Ticker data**')
+            st.write(tick)
+        with col2:
+            st.subheader('Major Holders')
+            major_holders = tickerData.major_holders
+            st._legacy_table(major_holders)
 
-        st.header('Major Holders')
-        major_holders = tickerData.major_holders
-        st._arrow_table(major_holders)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader('Mutual Funds Holders')
+            mf_holders = tickerData.mutualfund_holders
+            st._arrow_dataframe(mf_holders)
+        with col2:
+            st.subheader('Institutional Holders')
+            institutional_holders = tickerData.institutional_holders
+            st._arrow_dataframe(institutional_holders)
 
-        st.header('Institutional Holders')
-        institutional_holders = tickerData.institutional_holders
-        st._arrow_table(institutional_holders)
+        #sec fillings
+        st.subheader("SEC Fillings")
+        finfill = openbb.stocks.fa.sec(symbol= tickerSymbol)
+        st.write(finfill)
 
-        st.header('Mutual Funds Holders')
-        mf_holders = tickerData.mutualfund_holders
-        st._arrow_table(mf_holders)
+        col1, col2 = st.columns(2)
+        with col1:
+            # Government trades from openbb
+            st.subheader("Congress Trading")
+            st.pyplot(openbb.stocks.gov.gtrades_chart(symbol=tickerSymbol, gov_type='congress'))
+        with col2:
+            st.subheader("Insider Trading")
+            insidert = openbb.stocks.ins.lins(symbol=tickerSymbol)
+            st.write(insidert)
+
+        # Technical Analysis Report from Finviz.brain
+        st.subheader("Technical Analysis Summary")
+        report = openbb.stocks.ta.summary(tickerSymbol)
+        st.write(report)
+
+        #contracts
+        st.subheader('Contracts')
+        contracts = openbb.stocks.gov.contracts(tickerSymbol)
+        st.write(contracts)
+
+        st.subheader(f"Lobbying effects by {tickerSymbol}")
+        lobby = openbb.stocks.gov.lobbying(tickerSymbol)
+        st.write(lobby)
 
         # Bollinger bands
         st.header('**Bollinger Bands**')
-        qf = cf.QuantFig(tickerDf, title='First Quant Figure', legend='top', name='GS')
+        qf = cf.QuantFig(tick, title='First Quant Figure', legend='top', name='GS')
         qf.add_bollinger_bands()
         fig = qf.iplot(asFigure=True)
         st.plotly_chart(fig)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.pyplot(openbb.ta.kc_chart(data = openbb.stocks.load(tickerSymbol)))
+        with col2:
+            st.pyplot(openbb.ta.obv_chart(data= openbb.stocks.load(tickerSymbol, start_date = '2022-11-18', interval = 5, prepost = True)))
+
+
 
     if selected1 == 'Fundamentals':
         selected2 = option_menu(None, ["Balance Sheet", "Income Statement", "Cash-Flow", 'Analyze Statements'],
@@ -360,6 +406,7 @@ if tabs == 'News & Analysis':
                 color = 'green' if val > 0 else 'red'
                 return f'color: {color}'
 
+
         st.title('openbb.economy')
 
         col1, col2 = st.columns(2)
@@ -404,7 +451,6 @@ if tabs == 'News & Analysis':
         st.subheader('openbb.economy.events')
         data = openbb.economy.events()
         st.dataframe(data)
-
 
 if tabs == 'Market Overview':
     indicies, stocks, cryptoc, futures, forex = st.tabs(["Indicies", "stocks", "cryptoc", "futures", "forex"])
@@ -649,7 +695,7 @@ if tabs == 'Market Overview':
                     <!-- TradingView Widget END -->
                 """,
                 height=1250, width=2000,
- )
+            )
 
 if tabs == 'Social Sentiments':
     selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
