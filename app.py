@@ -26,7 +26,7 @@ from psaw import PushshiftAPI
 from scipy.optimize import minimize
 from st_on_hover_tabs import on_hover_tabs
 from streamlit_option_menu import option_menu
-from openbb_terminal.sdk import openbb, TerminalStyle
+from openbb_terminal.sdk import openbb
 from openbb_terminal.config_terminal import theme
 import config
 
