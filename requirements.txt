@@ -8,13 +8,6 @@ cufflinks
 financedatabase==1.0.2
 finnhub-python==2.4.15
 fundamentalanalysis==0.2.14
-google-api-core==2.11.0
-google-api-python-client==2.74.0
-google-auth==2.16.0
-google-auth-httplib2==0.1.0
-google-cloud==0.34.0
-google-cloud-vision==3.3.1
-googleapis-common-protos==1.58.0
 holidays
 korean_lunar_calendar==0.3.1
 matplotlib-inline==0.1.6
