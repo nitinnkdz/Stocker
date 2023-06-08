@@ -1,5 +1,4 @@
 import json
-
 import streamlit
 import streamlit as st
 import streamlit.components.v1 as components
@@ -10,16 +9,17 @@ import cufflinks as cf
 import finnhub
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import quantstats as qs
 import requests
 import tweepy
 import yfinance as yf
+from yahooquery import Ticker
 from PIL import Image
 from bs4 import BeautifulSoup
 from cryptocmd import CmcScraper
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from plotly import graph_objs as go
+import plotly.express as px
 from prophet import Prophet
 from prophet.plot import plot_plotly
 from psaw import PushshiftAPI
@@ -55,10 +55,11 @@ add_bg_from_url()
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 with st.sidebar:
     tabs = on_hover_tabs(
-        tabName=["Home", "Market Overview", "Stocks", "News & Analysis", "Social Sentiments", "ETF & Mutual Funds",
-                 "Startup Crunch", 'ML-Forecast', 'Portfolio', "FOREX-Map"], default_choice=0,
+        tabName=["Home", "Market Overview", "Stocks", "Cryptocurrency", "News & Analysis", "Social Sentiments",
+                 "ETF & Mutual Funds",
+                 "Economy Crunch", 'ML-Forecast', 'Portfolio'], default_choice=0,
         iconName=['home', 'dashboard', 'candlestick_chart', 'feed', 'track_changes', 'receipt', 'economy',
-                  'data_exploration', 'calculate', 'currency_rupee'],
+                  'data_exploration', 'calculate'],
         styles={'navtab': {'background-color': '#111',
                            'color': '#f5f0f0',
                            'font-size': '18px',
@@ -91,146 +92,159 @@ if tabs == "Home":
         st.image(image, width=200)
     with col3:
         st.write(' ')
-    st.markdown("This application allows you to examine Fundamentals, Market News, and Investor Sentiment.This application\
-                can provide you with a variety of stock-related information, as well as forecast the future value of any\
-                cryptocurrency/stocks! Under the hood, the application is developed with Streamlit (the front-end) and \
-                the Facebook Prophet model, which is an advanced open-source forecasting model established by Facebook.\
-                You can choose to train for any number of days in the future model on all available data or a specific \
-                period range. Finally, the prediction results can be plotted on both a normal and log scale.This \
-                application makes use of the Twitter API to deliver tweets connected to a ticker, as well as other APIs\
-                such as Iex Cloud, Finnhub, and Polygon.io to provide various information \
-                about a specific symbol.This features trading-view to analyse charts as well. ")
+
 
 if tabs == 'Stocks':
     selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
     if selected1 == 'Ticker-Info':
-        tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
-        tickerData = yf.Ticker(tickerSymbol)
-        tick = pd.DataFrame(tickerData.history(period="max"))
+        country = st.selectbox("Select the Country", ("USA", "India"))
+        if country == "USA":
+            tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
+            tickerData = yf.Ticker(tickerSymbol)
+            tick = pd.DataFrame(tickerData.history(period="max"))
 
-        col1, col2 = st.columns(2)
-        with col1:
-            url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
-            r = requests.get(url)
-            dataaplfa = r.json()
-            st.header(dataaplfa['Name'])
-            st.write(dataaplfa['Description'])
-            st.markdown('**Exchange**')
-            st.write(dataaplfa['Exchange'])
-            st.markdown('**Sector**')
-            st.write(dataaplfa['Sector'])
+            col1, col2 = st.columns(2)
+            with col1:
+                url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
+                r = requests.get(url)
+                dataaplfa = r.json()
+                st.header(dataaplfa['Name'])
+                st.write(dataaplfa['Description'])
+                st.markdown('**Exchange**')
+                st.write(dataaplfa['Exchange'])
+                st.markdown('**Sector**')
+                st.write(dataaplfa['Sector'])
+                st.markdown('**Industry**')
+                st.write(dataaplfa['Industry'])
+            with col2:
+                components.html(
+                    f"""
+                        <!-- TradingView Widget BEGIN -->
+                        <div class="tradingview-widget-container">
+                          <div id="tradingview_c0b7d"></div>
+                          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{tickerSymbol}/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
+                          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                          <script type="text/javascript">
+                          new TradingView.MediumWidget(
+                          {{
+                          "symbols": [
+                            [
+                              "{tickerSymbol}",
+                            ]
+                          ],
+                            "chartOnly": true,
+                                  "width": 800,
+                                  "height": 500,
+                                  "locale": "in",
+                                  "colorTheme": "dark",
+                                  "isTransparent": true,
+                                  "autosize": false,
+                                  "showVolume": false,
+                                  "hideDateRanges": false,
+                                  "scalePosition": "right",
+                                  "scaleMode": "Normal",
+                                  "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                                  "noTimeScale": false,
+                                  "valuesTracking": "1",
+                                  "chartType": "area",
+                                  "fontColor": "#787b86",
+                                  "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                                  "backgroundColor": "rgba(0, 0, 0, 1)",
+                                  "lineColor": "rgb(253,128,0)",
+                                  "topColor": "rgba(245, 124, 0, 0.3)",
+                                  "bottomColor": "rgba(41, 98, 255, 0)",
+                                  "lineWidth": 3,
+                                  "container_id": "tradingview_c0b7d"
+                        }}
+                          );
+                          </script>
+                        </div>
+                    """,
+                    height=610, width=980,
+                )
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader('**Ticker data**')
+                st.write(tick)
+            with col2:
+                st.subheader('Major Holders')
+                major_holders = tickerData.major_holders
+                st._legacy_table(major_holders)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader('Mutual Funds Holders')
+                mf_holders = tickerData.mutualfund_holders
+                st._arrow_dataframe(mf_holders)
+            with col2:
+                st.subheader('Institutional Holders')
+                institutional_holders = tickerData.institutional_holders
+                st._arrow_dataframe(institutional_holders)
+
+            # sec fillings
+            st.subheader("SEC Fillings")
+            finfill = openbb.stocks.fa.sec(symbol=tickerSymbol)
+            st.write(finfill)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                # Government trades from openbb
+                st.subheader("Congress Trading")
+                st.write(openbb.stocks.gov.gtrades(symbol=tickerSymbol, gov_type='congress'))
+            with col2:
+                st.subheader("Insider Trading")
+                insidert = openbb.stocks.ins.lins(symbol=f'{tickerSymbol}')
+                st._legacy_dataframe(insidert)
+
+            # contracts
+            st.subheader('Contracts')
+            contracts = openbb.stocks.gov.contracts(tickerSymbol)
+            st.write(contracts)
+
+            st.subheader(f"Lobbying effects by {tickerSymbol}")
+            lobby = openbb.stocks.gov.lobbying(tickerSymbol)
+            st.write(lobby)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                # Bollinger bands
+                st.header('**Bollinger Bands**')
+                qf = cf.QuantFig(tick, title='First Quant Figure', legend='top', name='GS')
+                qf.add_bollinger_bands()
+                fig = qf.iplot(asFigure=True)
+                st.plotly_chart(fig)
+            with col2:
+                # Technical Analysis Report from Finviz.brain
+                st.subheader("Technical Analysis Summary")
+                report = openbb.stocks.ta.summary(tickerSymbol)
+                st.write(report)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.pyplot(openbb.ta.kc_chart(data=openbb.stocks.load(tickerSymbol)))
+            with col2:
+                st.pyplot(openbb.ta.obv_chart(
+                    data=openbb.stocks.load(tickerSymbol, start_date='2022-11-18', interval=5, prepost=True)))
+        if country == "India":
+            # Created using Yahooquery library
+            tickerSymbol = st.text_input('Enter Tickers of the companies', 'SBIN.NS')
+            infodata = Ticker(f'{tickerSymbol}')
+            infooutput = infodata.asset_profile
+            st.markdown('**Country**')
+            st.write(infooutput[f"{tickerSymbol}"]["country"])
+            st.markdown('Description')
+            st.write(infooutput[f"{tickerSymbol}"]["longBusinessSummary"])
             st.markdown('**Industry**')
-            st.write(dataaplfa['Industry'])
-        with col2:
-            components.html(
-                f"""
-                    <!-- TradingView Widget BEGIN -->
-                    <div class="tradingview-widget-container">
-                      <div id="tradingview_c0b7d"></div>
-                      <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{tickerSymbol}/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
-                      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-                      <script type="text/javascript">
-                      new TradingView.MediumWidget(
-                      {{
-                      "symbols": [
-                        [
-                          "{tickerSymbol}",
-                        ]
-                      ],
-                        "chartOnly": true,
-                              "width": 800,
-                              "height": 500,
-                              "locale": "in",
-                              "colorTheme": "dark",
-                              "isTransparent": true,
-                              "autosize": false,
-                              "showVolume": false,
-                              "hideDateRanges": false,
-                              "scalePosition": "right",
-                              "scaleMode": "Normal",
-                              "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-                              "noTimeScale": false,
-                              "valuesTracking": "1",
-                              "chartType": "area",
-                              "fontColor": "#787b86",
-                              "gridLineColor": "rgba(240, 243, 250, 0.06)",
-                              "backgroundColor": "rgba(0, 0, 0, 1)",
-                              "lineColor": "rgb(253,128,0)",
-                              "topColor": "rgba(245, 124, 0, 0.3)",
-                              "bottomColor": "rgba(41, 98, 255, 0)",
-                              "lineWidth": 3,
-                              "container_id": "tradingview_c0b7d"
-                    }}
-                      );
-                      </script>
-                    </div>
-                """,
-                height=610, width=980,
-            )
+            st.write(infooutput[f"{tickerSymbol}"]["industry"])
+            st.markdown('**Sector**')
+            st.write(infooutput[f"{tickerSymbol}"]["sector"])
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader('**Ticker data**')
-            st.write(tick)
-        with col2:
-            st.subheader('Major Holders')
-            major_holders = tickerData.major_holders
-            st._legacy_table(major_holders)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader('Mutual Funds Holders')
-            mf_holders = tickerData.mutualfund_holders
-            st._arrow_dataframe(mf_holders)
-        with col2:
-            st.subheader('Institutional Holders')
-            institutional_holders = tickerData.institutional_holders
-            st._arrow_dataframe(institutional_holders)
-
-        #sec fillings
-        st.subheader("SEC Fillings")
-        finfill = openbb.stocks.fa.sec(symbol= tickerSymbol)
-        st.write(finfill)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            # Government trades from openbb
-            st.subheader("Congress Trading")
-            st.pyplot(openbb.stocks.gov.gtrades_chart(symbol=tickerSymbol, gov_type='congress'))
-        with col2:
-            st.subheader("Insider Trading")
-            insidert = openbb.stocks.ins.lins(symbol=tickerSymbol)
-            st.write(insidert)
-
-        # Technical Analysis Report from Finviz.brain
-        st.subheader("Technical Analysis Summary")
-        report = openbb.stocks.ta.summary(tickerSymbol)
-        st.write(report)
-
-        #contracts
-        st.subheader('Contracts')
-        contracts = openbb.stocks.gov.contracts(tickerSymbol)
-        st.write(contracts)
-
-        st.subheader(f"Lobbying effects by {tickerSymbol}")
-        lobby = openbb.stocks.gov.lobbying(tickerSymbol)
-        st.write(lobby)
-
-        # Bollinger bands
-        st.header('**Bollinger Bands**')
-        qf = cf.QuantFig(tick, title='First Quant Figure', legend='top', name='GS')
-        qf.add_bollinger_bands()
-        fig = qf.iplot(asFigure=True)
-        st.plotly_chart(fig)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.pyplot(openbb.ta.kc_chart(data = openbb.stocks.load(tickerSymbol)))
-        with col2:
-            st.pyplot(openbb.ta.obv_chart(data= openbb.stocks.load(tickerSymbol, start_date = '2022-11-18', interval = 5, prepost = True)))
-
-
+            # Running on yfinance library
+            tickerData = yf.Ticker(tickerSymbol)
+            tick = pd.DataFrame(tickerData.history(period="max"))
+            st._arrow_dataframe(tick)
 
     if selected1 == 'Fundamentals':
         selected2 = option_menu(None, ["Balance Sheet", "Income Statement", "Cash-Flow", 'Analyze Statements'],
@@ -372,8 +386,55 @@ if tabs == 'Stocks':
             st.markdown('dividendPerShare')
             st.write(live_analysis[0]['dividendPerShareTTM'])
 
+if tabs == 'Cryptocurrency':
+    selected2 = option_menu(None, ["Overview", "Cryptocurrency Info"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
+    if selected2 == "Overview":
+        st.subheader('Coins')
+        listdisc = openbb.crypto.disc.coins()
+        st._arrow_dataframe(listdisc)
+
+        # Trending coins on coingecko
+        st.subheader('Trending Coins')
+        trendlist = openbb.crypto.disc.trending()
+        st._arrow_dataframe(trendlist)
+
+        # Losers
+        st.subheader('Lossers')
+        losslist = openbb.crypto.disc.losers(interval='1y')
+        st._arrow_dataframe(losslist)
+
+        swapsde = openbb.crypto.defi.vaults(chain=True, protocol=True, kind=True, ascend=True, sortby="apy")
+        st._arrow_dataframe(swapsde)
+
+        nwl = openbb.crypto.defi.newsletters()
+        st._arrow_dataframe(nwl)
+
+        # terra blockchain staking ratio history
+        pool = openbb.crypto.defi.sratio(limit=400)
+        st._arrow_dataframe(pool)
+
+        # terra blockchain staking returns history
+        sreturn = openbb.crypto.defi.sreturn(limit=400)
+        st._arrow_dataframe(sreturn)
+
+    if selected2 == "Cryptocurrency Info":
+        cryptosymbol = st.text_input('Enter Tickers of the companies', 'BTC-USD')  # To get data from yahoo finance
+        tickers = Ticker(f'{cryptosymbol}', asynchronous=True)
+        assetprofile = Ticker(f'{cryptosymbol}', formatted=True).asset_profile
+        st.header(assetprofile[f"{cryptosymbol}"]['name'])
+        st.write(assetprofile[f"{cryptosymbol}"]['description'])
+        cdf = tickers.history(period='max')
+        st._arrow_dataframe(cdf)
+
+        text = cryptosymbol
+        head, sep, tail = text.partition('-')
+        updatedsymbol = head
+        trades_ethusdt = openbb.crypto.dd.trades(exchange_id='binance', symbol=f'{updatedsymbol}', to_symbol='USDT')
+        st._arrow_dataframe(trades_ethusdt)
+
 if tabs == 'News & Analysis':
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "TestOpenbb"],
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Startup Watch"],
                             menu_icon="cast", default_index=0, orientation="horizontal")
 
     if selected1 == 'Market Crunch':
@@ -400,60 +461,28 @@ if tabs == 'News & Analysis':
             st.image(results['image_url'])
             st.write(results['article_url'])
 
-    if selected1 == 'TestOpenbb':
-        def color_negative_red(val):
-            if type(val) != 'str':
-                color = 'green' if val > 0 else 'red'
-                return f'color: {color}'
+    if selected1 == 'Startup Watch':
+        jig = st.text_input("Topic", value='Startup', max_chars=15)
+        st.write("(In topic area you can enter the name of any startup and it will fetch all the news eg Zomato ,Zepto ,etc)")
+        url = ('https://newsapi.org/v2/everything?'
+               f'q={jig}&'
+               'domains= indiatimes.com,vccircle.com,techcrunch.com,moneycontrol.com,business-standard.com,livemint.com&'
+               'apiKey=e9281231a2bb483caaeccce82d9a235d')
 
+        response = requests.get(url)
+        articles = json.loads(response.text)['articles']
+        for articles in articles:
+            st.header(articles["title"])
+            st.write(articles["publishedAt"], articles["author"])
+            st.markdown(articles["description"])
+            st.image(articles["urlToImage"])
+            with st.expander('Expand'):
+                st.write(articles["content"])
 
-        st.title('openbb.economy')
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.subheader('openbb.economy.currencies')
-            data = openbb.economy.currencies()
-            data[['Chng']] = data[['Chng']].apply(pd.to_numeric)
-            st.dataframe(data.style.applymap(color_negative_red, subset=['Chng']))
-
-        with col2:
-            st.subheader('openbb.economy.usbonds')
-            data = openbb.economy.usbonds()
-            data[data.columns[1]] = data[data.columns[1]].apply(pd.to_numeric)
-            data[data.columns[2]] = data[data.columns[2]].apply(pd.to_numeric)
-            data[data.columns[3]] = data[data.columns[3]].apply(pd.to_numeric)
-
-            columns = data.columns[3]
-
-            st.dataframe(data.style.applymap(color_negative_red, subset=[columns]))
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.subheader('openbb.economy.macro_countries')
-            countries = pd.DataFrame.from_dict(openbb.economy.macro_countries(), orient='index')
-            st.dataframe(countries)
-
-        with col2:
-            st.subheader('openbb.economy.indices')
-            data = openbb.economy.indices()
-
-            data[['Chg']] = data[['Chg']].apply(pd.to_numeric)
-
-            st.dataframe(data.style.applymap(color_negative_red, subset=['Chg']))
-
-        data = openbb.economy.treasury()
-        st.subheader('openbb.economy.treasury')
-        theme = TerminalStyle("dark", "dark", "dark")
-        st.line_chart(data=data, x=None, y=None, width=0, height=0, use_container_width=True)
-
-        st.subheader('openbb.economy.events')
-        data = openbb.economy.events()
-        st.dataframe(data)
 
 if tabs == 'Market Overview':
     indicies, stocks, cryptoc, futures, forex = st.tabs(["Indicies", "stocks", "cryptoc", "futures", "forex"])
+
     with indicies:
         components.html(
             """
@@ -554,9 +583,52 @@ if tabs == 'Market Overview':
             """,
             height=1250, width=2000,
         )
-        with cryptoc:
-            components.html(
-                """
+    with stocks:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader('Top Gainers')
+            gainers = openbb.stocks.disc.gainers()
+            st.dataframe(gainers)
+        with col2:
+            st.subheader('Top Losers')
+            lose = openbb.stocks.disc.losers()
+            st._legacy_dataframe(lose)
+
+        st.subheader('Hot penny stocks')
+        hpenny = openbb.stocks.disc.hotpenny()
+        st._arrow_dataframe(hpenny)
+
+        st.subheader('Potentially undervalued large cap stocks')
+        up = openbb.stocks.disc.ulc()
+        st._arrow_dataframe(up)
+
+        st.subheader('Stocks ordered in descending order by intraday trade volume. [Source: Yahoo Finance]')
+        activest =openbb.stocks.disc.active()
+        st._arrow_dataframe(activest)
+
+        st.subheader('Small cap stocks with earnings growth rates better than 25%')
+        smallcap = openbb.stocks.disc.asc()
+        st._arrow_dataframe(smallcap)
+
+        st.subheader('stocks with earnings growth rates better than 25% and relatively low PE and PEG ratios')
+        ug= openbb.stocks.disc.ugs()
+        st._arrow_dataframe(ug)
+
+
+        st.subheader("Trending articles")
+        tra = openbb.stocks.disc.trending(limit = 50)
+        st._arrow_table(tra)
+
+
+
+
+
+
+
+
+    with cryptoc:
+        components.html(
+            """
                  <!-- TradingView Widget BEGIN -->
                     <div class="tradingview-widget-container">
                       <div class="tradingview-widget-container__widget"></div>
@@ -694,119 +766,179 @@ if tabs == 'Market Overview':
                     </div>
                     <!-- TradingView Widget END -->
                 """,
-                height=1250, width=2000,
-            )
-
-if tabs == 'Social Sentiments':
-    selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
-
-    if selected1 == 'StockTwits':
-        symboltws = st.text_input("Symbol", value='AAPL', max_chars=10)
-        r1 = requests.get(f"https://api.stocktwits.com/api/2/streams/symbol/{symboltws}.json")
-        data1 = r1.json()
-        for message in data1['messages']:
-            st.image(message['user']['avatar_url'])
-            st.write(message['user']['username'])
-            st.write(message['created_at'])
-            st.write(message['body'])
-
-    if selected1 == 'Twitter':
-        for username in config.screenname:
-            user = api.get_user(username)
-            tweets = api.user_timeline(username)
-
-            st.subheader(username)
-            st.image(user.profile_image_url)
-
-            for tweet in tweets:
-                if '$' in tweet.text:
-                    words = tweet.text.split(' ')
-                    for word in words:
-                        if word.startswith('$') and word[1:].isalpha():
-                            symbol = word[1:]
-                            st.write(symbol)
-                            st.write(tweet.text)
-                            st.image(f"https://finviz.com/chart.ashx?t={symbol}")
-
-    if selected1 == 'Reddit':
-        tsymbol = st.sidebar.text_input("Symbol", value='TSLA', max_chars=10)
-        api = PushshiftAPI()
-        start_time = date(2022, 5, 26)
-        submissions = list(api.search_submissions(after=start_time,
-                                                  subreddit='wallstreetbets',
-                                                  filter=['url', 'author', 'title', 'subreddit'],
-                                                  limit=50)
-                           )
-        for submission in submissions:
-            words = submission.title.split()
-            cashtags = list(set(filter(lambda word: word.lower().startswith('$'), words)))
-            if len(cashtags) > 0:
-                st.write(cashtags)
-                st.write(submission.title)
-
-if tabs == 'ML-Forecast':
-    selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
-    if selected3 == 'Stocks':
-        START = st.date_input('Start Date', date(2011, 1, 1))
-        END = st.date_input('End date')
-        stockslist = pd.read_csv(
-            'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-            error_bad_lines=False)
-        selected_stock = st.selectbox('Select the stock for prediction', stockslist)
-
-        n_years = st.slider('Years of prediction:', 1, 5)
-        period = n_years * 365
-
-
-        @st.cache
-        def load_data(ticker):
-            data = yf.download(ticker, START, END)
-            data.reset_index(inplace=True)
-            return data
-
-
-        data_load_state = st.text('Loading data...')
-        data = load_data(selected_stock)
-        data_load_state.text('Loading data... done!')
-
-        st.subheader('Raw data')
-        st.write(data.tail())
-
-
-        def plot_raw_data():
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
-            fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
-            fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
-            st.plotly_chart(fig)
-
-
-        plot_raw_data()
-
-        df_train = data[['Date', 'Close']]
-        df_train = df_train.rename(columns={"Date": "ds", "Close": "y"})
-
-        m = Prophet()
-        m.fit(df_train)
-        future = m.make_future_dataframe(periods=period)
-        forecast = m.predict(future)
-
-        st.subheader('Forecast data')
-        st.write(forecast.tail())
-
-        st.write(f'Forecast plot for {n_years} years')
-        fig1 = plot_plotly(m, forecast)
-        st.plotly_chart(fig1)
-
-        st.write("Forecast components")
-        fig2 = m.plot_components(forecast)
-        st.write(fig2)
-
-    if selected3 == 'Cryptocurrency':
-        st.markdown(
+            height=1250, width=2000,
+        )
+    with forex:
+        components.html(
             """
+                    <!-- TradingView Widget BEGIN -->
+        <div class="tradingview-widget-container">
+          <div class="tradingview-widget-container__widget"></div>
+          <div class="tradingview-widget-copyright"> rel="noopener nofollow" target="_blank"><span class="blue-text"></span></a></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
+          {
+          "width": "1600",
+          "height": "1550",
+          "currencies": [
+            "EUR",
+            "USD",
+            "JPY",
+            "GBP",
+            "CHF",
+            "AUD",
+            "CAD",
+            "NZD",
+            "CNY",
+            "TRY",
+            "SEK",
+            "NOK",
+            "DKK",
+            "ZAR",
+            "HKD",
+            "SGD",
+            "THB",
+            "MXN",
+            "IDR",
+            "KRW",
+            "PLN",
+            "ISK",
+            "KWD",
+            "PHP",
+            "MYR",
+            "INR",
+            "TWD",
+            "SAR",
+            "AED",
+            "RUB",
+            "ILS",
+            "ARS",
+            "CLP",
+            "COP",
+            "PEN",
+            "UYU"
+          ],
+          "isTransparent": true,
+          "colorTheme": "dark",
+          "locale": "in"
+        }
+          </script>
+        </div>
+        <!-- TradingView Widget END -->    
+            """,
+            height=1250, width=2000
+        )
+
+
+    if tabs == 'Social Sentiments':
+        selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
+                                menu_icon="cast", default_index=0, orientation="horizontal")
+
+        if selected1 == 'StockTwits':
+            symboltws = st.text_input("Symbol", value='AAPL', max_chars=10)
+            r1 = requests.get(f"https://api.stocktwits.com/api/2/streams/symbol/{symboltws}.json")
+            data1 = r1.json()
+            for message in data1['messages']:
+                st.image(message['user']['avatar_url'])
+                st.write(message['user']['username'])
+                st.write(message['created_at'])
+                st.write(message['body'])
+
+        if selected1 == 'Twitter':
+            for username in config.screenname:
+                user = api.get_user(username)
+                tweets = api.user_timeline(username)
+
+                st.subheader(username)
+                st.image(user.profile_image_url)
+
+                for tweet in tweets:
+                    if '$' in tweet.text:
+                        words = tweet.text.split(' ')
+                        for word in words:
+                            if word.startswith('$') and word[1:].isalpha():
+                                symbol = word[1:]
+                                st.write(symbol)
+                                st.write(tweet.text)
+                                st.image(f"https://finviz.com/chart.ashx?t={symbol}")
+
+        if selected1 == 'Reddit':
+            tsymbol = st.sidebar.text_input("Symbol", value='TSLA', max_chars=10)
+            api = PushshiftAPI()
+            start_time = date(2022, 5, 26)
+            submissions = list(api.search_submissions(after=start_time,
+                                                      subreddit='wallstreetbets',
+                                                      filter=['url', 'author', 'title', 'subreddit'],
+                                                      limit=50)
+                               )
+            for submission in submissions:
+                words = submission.title.split()
+                cashtags = list(set(filter(lambda word: word.lower().startswith('$'), words)))
+                if len(cashtags) > 0:
+                    st.write(cashtags)
+                    st.write(submission.title)
+
+    if tabs == 'ML-Forecast':
+        selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
+                                menu_icon="cast", default_index=0, orientation="horizontal")
+        if selected3 == 'Stocks':
+            START = st.date_input('Start Date', date(2011, 1, 1))
+            END = st.date_input('End date')
+            stockslist = pd.read_csv(
+                'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
+                error_bad_lines=False)
+            selected_stock = st.selectbox('Select the stock for prediction', stockslist)
+
+            n_years = st.slider('Years of prediction:', 1, 5)
+            period = n_years * 365
+
+
+            @st.cache
+            def load_data(ticker):
+                data = yf.download(ticker, START, END)
+                data.reset_index(inplace=True)
+                return data
+
+
+            data_load_state = st.text('Loading data...')
+            data = load_data(selected_stock)
+            data_load_state.text('Loading data... done!')
+
+            st.subheader('Raw data')
+            st.write(data.tail())
+
+
+            def plot_raw_data():
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
+                fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
+                fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+                st.plotly_chart(fig)
+
+
+            plot_raw_data()
+
+            df_train = data[['Date', 'Close']]
+            df_train = df_train.rename(columns={"Date": "ds", "Close": "y"})
+
+            m = Prophet()
+            m.fit(df_train)
+            future = m.make_future_dataframe(periods=period)
+            forecast = m.predict(future)
+
+            st.subheader('Forecast data')
+            st.write(forecast.tail())
+
+            st.write(f'Forecast plot for {n_years} years')
+            fig1 = plot_plotly(m, forecast)
+            st.plotly_chart(fig1)
+
+            st.write("Forecast components")
+            fig2 = m.plot_components(forecast)
+            st.write(fig2)
+
+        if selected3 == 'Cryptocurrency':
+            st.markdown(
+                """
         <style>
         .big-font {
             fontWeight: bold;
@@ -1160,71 +1292,6 @@ if tabs == 'ETF & Mutual Funds':
         mf_equity_holdings = mf_data.info['equityHoldings']
         st.write(mf_equity_holdings)
 
-if tabs == 'FOREX-Map':
-    with st.spinner('Wait for it...'):
-        time.sleep(5)
-        st.success('Done!')
-    components.html(
-        """
-                    <!-- TradingView Widget BEGIN -->
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/markets/currencies/forex-heat-map/" rel="noopener" target="_blank"><span class="blue-text">Forex Heat Map</span></a> by TradingView</div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
-              {
-              "width": 1300,
-              "height": 800,
-              "currencies": [
-                "EUR",
-                "USD",
-                "JPY",
-                "GBP",
-                "CHF",
-                "AUD",
-                "CAD",
-                "NZD",
-                "CNY",
-                "TRY",
-                "SEK",
-                "NOK",
-                "DKK",
-                "ZAR",
-                "HKD",
-                "SGD",
-                "THB",
-                "MXN",
-                "IDR",
-                "KRW",
-                "PLN",
-                "ISK",
-                "KWD",
-                "PHP",
-                "MYR",
-                "INR",
-                "TWD",
-                "SAR",
-                "AED",
-                "RUB",
-                "ILS",
-                "ARS",
-                "CLP",
-                "COP",
-                "PEN",
-                "UYU"
-              ],
-              "isTransparent": false,
-              "colorTheme": "light",
-              "locale": "in"
-            }
-              </script>
-            </div>
-            <!-- TradingView Widget END -->
-                    
-         """,
-        height=65000,
-        width=1200,
-    )
-
 if tabs == 'Quant Report':
     qs.extend_pandas()
     qticker_list = pd.read_csv(
@@ -1240,19 +1307,55 @@ if tabs == 'Quant Report':
     print(source_code)
     components.html(source_code)
 
-if tabs == 'Startup Crunch':
-    jig = st.text_input("Symbol", value='Startup', max_chars=15)
-    url = ('https://newsapi.org/v2/everything?'
-           f'q={jig}&'
-           'domains= indiatimes.com,vccircle.com,techcrunch.com,moneycontrol.com,business-standard.com,livemint.com&'
-           'apiKey=e9281231a2bb483caaeccce82d9a235d')
+if tabs == 'Economy Crunch':
+    def color_negative_red(val):
+        if type(val) != 'str':
+            color = 'green' if val > 0 else 'red'
+            return f'color: {color}'
 
-    response = requests.get(url)
-    articles = json.loads(response.text)['articles']
-    for articles in articles:
-        st.header(articles["title"])
-        st.write(articles["publishedAt"], articles["author"])
-        st.markdown(articles["description"])
-        st.image(articles["urlToImage"])
-        with st.expander('Expand'):
-            st.write(articles["content"])
+
+    st.title('openbb.economy')
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader('openbb.economy.currencies')
+        data = openbb.economy.currencies()
+        data[['Chng']] = data[['Chng']].apply(pd.to_numeric)
+        st.dataframe(data.style.applymap(color_negative_red, subset=['Chng']))
+
+    with col2:
+        st.subheader('openbb.economy.usbonds')
+        data = openbb.economy.usbonds()
+        data[data.columns[1]] = data[data.columns[1]].apply(pd.to_numeric)
+        data[data.columns[2]] = data[data.columns[2]].apply(pd.to_numeric)
+        data[data.columns[3]] = data[data.columns[3]].apply(pd.to_numeric)
+
+        columns = data.columns[3]
+
+        st.dataframe(data.style.applymap(color_negative_red, subset=[columns]))
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader('openbb.economy.macro_countries')
+        countries = pd.DataFrame.from_dict(openbb.economy.macro_countries(), orient='index')
+        st.dataframe(countries)
+
+    with col2:
+        st.subheader('openbb.economy.indices')
+        data = openbb.economy.indices()
+
+        data[['Chg']] = data[['Chg']].apply(pd.to_numeric)
+
+        st.dataframe(data.style.applymap(color_negative_red, subset=['Chg']))
+
+    data = openbb.economy.treasury()
+    st.subheader('openbb.economy.treasury')
+    theme = TerminalStyle("dark", "dark", "dark")
+    st.line_chart(data=data, x=None, y=None, width=0, height=0, use_container_width=True)
+
+    st.subheader('openbb.economy.events')
+    data = openbb.economy.events()
+    st.dataframe(data)
+
