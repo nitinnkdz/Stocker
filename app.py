@@ -1,25 +1,29 @@
+import numpy as np
+import pandas as pd
 import json
-import streamlit
+import re
+import os
 import streamlit as st
 import streamlit.components.v1 as components
 import time
-from datetime import datetime, date
-from urllib.request import urlopen, Request
+import config
 import cufflinks as cf
 import finnhub
-import numpy as np
-import pandas as pd
+import pandas_datareader.data as web
 import quantstats as qs
+import plotly.express as px
 import requests
 import tweepy
 import yfinance as yf
+import openai
+import matplotlib.pyplot as plt
 from yahooquery import Ticker
-from PIL import Image
+from datetime import datetime, date
+from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 from cryptocmd import CmcScraper
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from plotly import graph_objs as go
-import plotly.express as px
 from prophet import Prophet
 from prophet.plot import plot_plotly
 from psaw import PushshiftAPI
@@ -27,13 +31,20 @@ from scipy.optimize import minimize
 from st_on_hover_tabs import on_hover_tabs
 from streamlit_option_menu import option_menu
 from openbb_terminal.sdk import openbb
-from openbb_terminal.config_terminal import theme
-import config
+from openbb_terminal.sdk import TerminalStyle
+import datetime, requests, yfinance
+from alpaca.data.historical import StockHistoricalDataClient
+from langchain.agents import load_tools
+from langchain.agents import initialize_agent
+from langchain.agents import AgentType
+from langchain.llms import OpenAI
+
 
 st.set_page_config(page_title="STOCKER", layout="wide")
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
+# Function to set logo and background image of the app
 def add_bg_from_url():
     st.markdown(
         f"""
@@ -48,18 +59,31 @@ def add_bg_from_url():
          """,
         unsafe_allow_html=True
     )
-
-
 add_bg_from_url()
+
+# To remove the footer of the app
+hide_streamlit_style = """
+            <style>
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
+# To set the positive value to green and negative to red
+def color_negative_red(val):
+    if type(val) != 'str':
+        color = 'green' if val > 0 else 'red'
+        return f'color: {color}'
+
 
 st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 with st.sidebar:
     tabs = on_hover_tabs(
-        tabName=["Home", "Market Overview", "Stocks", "Cryptocurrency", "News & Analysis", "Social Sentiments",
-                 "ETF & Mutual Funds",
-                 "Economy Crunch", 'ML-Forecast', 'Portfolio'], default_choice=0,
+        tabName=["Home", "Market Overview", "Stocks", "Cryptocurrency", "News & Analysis", "Portfolio",
+                 "ETF & Mutual Funds","Economy Crunch", "ML-Forecast","Quant Report","Stocker.ai"], default_choice=0,
         iconName=['home', 'dashboard', 'candlestick_chart', 'feed', 'track_changes', 'receipt', 'economy',
-                  'data_exploration', 'calculate'],
+                  'data_exploration', 'calculate','insights','forum'],
         styles={'navtab': {'background-color': '#111',
                            'color': '#f5f0f0',
                            'font-size': '18px',
@@ -92,393 +116,16 @@ if tabs == "Home":
         st.image(image, width=200)
     with col3:
         st.write(' ')
-
-
-if tabs == 'Stocks':
-    selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
-    if selected1 == 'Ticker-Info':
-        country = st.selectbox("Select the Country", ("USA", "India"))
-        if country == "USA":
-            tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
-            tickerData = yf.Ticker(tickerSymbol)
-            tick = pd.DataFrame(tickerData.history(period="max"))
-
-            col1, col2 = st.columns(2)
-            with col1:
-                url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
-                r = requests.get(url)
-                dataaplfa = r.json()
-                st.header(dataaplfa['Name'])
-                st.write(dataaplfa['Description'])
-                st.markdown('**Exchange**')
-                st.write(dataaplfa['Exchange'])
-                st.markdown('**Sector**')
-                st.write(dataaplfa['Sector'])
-                st.markdown('**Industry**')
-                st.write(dataaplfa['Industry'])
-            with col2:
-                components.html(
-                    f"""
-                        <!-- TradingView Widget BEGIN -->
-                        <div class="tradingview-widget-container">
-                          <div id="tradingview_c0b7d"></div>
-                          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{tickerSymbol}/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
-                          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-                          <script type="text/javascript">
-                          new TradingView.MediumWidget(
-                          {{
-                          "symbols": [
-                            [
-                              "{tickerSymbol}",
-                            ]
-                          ],
-                            "chartOnly": true,
-                                  "width": 800,
-                                  "height": 500,
-                                  "locale": "in",
-                                  "colorTheme": "dark",
-                                  "isTransparent": true,
-                                  "autosize": false,
-                                  "showVolume": false,
-                                  "hideDateRanges": false,
-                                  "scalePosition": "right",
-                                  "scaleMode": "Normal",
-                                  "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-                                  "noTimeScale": false,
-                                  "valuesTracking": "1",
-                                  "chartType": "area",
-                                  "fontColor": "#787b86",
-                                  "gridLineColor": "rgba(240, 243, 250, 0.06)",
-                                  "backgroundColor": "rgba(0, 0, 0, 1)",
-                                  "lineColor": "rgb(253,128,0)",
-                                  "topColor": "rgba(245, 124, 0, 0.3)",
-                                  "bottomColor": "rgba(41, 98, 255, 0)",
-                                  "lineWidth": 3,
-                                  "container_id": "tradingview_c0b7d"
-                        }}
-                          );
-                          </script>
-                        </div>
-                    """,
-                    height=610, width=980,
-                )
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader('**Ticker data**')
-                st.write(tick)
-            with col2:
-                st.subheader('Major Holders')
-                major_holders = tickerData.major_holders
-                st._legacy_table(major_holders)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader('Mutual Funds Holders')
-                mf_holders = tickerData.mutualfund_holders
-                st._arrow_dataframe(mf_holders)
-            with col2:
-                st.subheader('Institutional Holders')
-                institutional_holders = tickerData.institutional_holders
-                st._arrow_dataframe(institutional_holders)
-
-            # sec fillings
-            st.subheader("SEC Fillings")
-            finfill = openbb.stocks.fa.sec(symbol=tickerSymbol)
-            st.write(finfill)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                # Government trades from openbb
-                st.subheader("Congress Trading")
-                st.write(openbb.stocks.gov.gtrades(symbol=tickerSymbol, gov_type='congress'))
-            with col2:
-                st.subheader("Insider Trading")
-                insidert = openbb.stocks.ins.lins(symbol=f'{tickerSymbol}')
-                st._legacy_dataframe(insidert)
-
-            # contracts
-            st.subheader('Contracts')
-            contracts = openbb.stocks.gov.contracts(tickerSymbol)
-            st.write(contracts)
-
-            st.subheader(f"Lobbying effects by {tickerSymbol}")
-            lobby = openbb.stocks.gov.lobbying(tickerSymbol)
-            st.write(lobby)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                # Bollinger bands
-                st.header('**Bollinger Bands**')
-                qf = cf.QuantFig(tick, title='First Quant Figure', legend='top', name='GS')
-                qf.add_bollinger_bands()
-                fig = qf.iplot(asFigure=True)
-                st.plotly_chart(fig)
-            with col2:
-                # Technical Analysis Report from Finviz.brain
-                st.subheader("Technical Analysis Summary")
-                report = openbb.stocks.ta.summary(tickerSymbol)
-                st.write(report)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.pyplot(openbb.ta.kc_chart(data=openbb.stocks.load(tickerSymbol)))
-            with col2:
-                st.pyplot(openbb.ta.obv_chart(
-                    data=openbb.stocks.load(tickerSymbol, start_date='2022-11-18', interval=5, prepost=True)))
-        if country == "India":
-            # Created using Yahooquery library
-            tickerSymbol = st.text_input('Enter Tickers of the companies', 'SBIN.NS')
-            infodata = Ticker(f'{tickerSymbol}')
-            infooutput = infodata.asset_profile
-            st.markdown('**Country**')
-            st.write(infooutput[f"{tickerSymbol}"]["country"])
-            st.markdown('Description')
-            st.write(infooutput[f"{tickerSymbol}"]["longBusinessSummary"])
-            st.markdown('**Industry**')
-            st.write(infooutput[f"{tickerSymbol}"]["industry"])
-            st.markdown('**Sector**')
-            st.write(infooutput[f"{tickerSymbol}"]["sector"])
-
-            # Running on yfinance library
-            tickerData = yf.Ticker(tickerSymbol)
-            tick = pd.DataFrame(tickerData.history(period="max"))
-            st._arrow_dataframe(tick)
-
-    if selected1 == 'Fundamentals':
-        selected2 = option_menu(None, ["Balance Sheet", "Income Statement", "Cash-Flow", 'Analyze Statements'],
-                                menu_icon="cast", default_index=0, orientation="horizontal")
-        ticker_list = pd.read_csv(
-            'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-            error_bad_lines=False)
-        tickerSymbol = st.selectbox('Stock ticker', ticker_list)
-        tickerData = yf.Ticker(tickerSymbol)
-        if selected2 == 'Balance Sheet':
-            tickerDf = tickerData.get_balance_sheet()
-            st.subheader('**Balance Sheet**')
-            st.table(tickerDf)
-
-        if selected2 == 'Income Statement':
-            tickerDfi = tickerData.financials
-            st.subheader('**Income Statement**')
-            st.table(tickerDfi)
-
-        if selected2 == 'Cash-Flow':
-            tickerDfc = tickerData.cashflow
-            st.subheader('**Cash Flow**')
-            st.table(tickerDfc)
-
-        if selected2 == 'Analyze Statements':
-            url23 = requests.get(
-                f'https://financialmodelingprep.com/api/v3/ratios-ttm/{tickerSymbol}?apikey=7062ab81fcd13c8807496957c0208206')
-            live_analysis = url23.json()
-            st.markdown('P/E ratio')
-            st.write(live_analysis[0]['peRatioTTM'])
-            st.markdown('PE/G Ratio ')
-            st.write(live_analysis[0]['pegRatioTTM'])
-            st.markdown('Payout Ratio')
-            st.write(live_analysis[0]['payoutRatioTTM'])
-            st.markdown('Current ratio')
-            st.write(live_analysis[0]['currentRatioTTM'])
-            st.markdown('Quick ratio')
-            st.write(live_analysis[0]['quickRatioTTM'])
-            st.markdown('Cash ratio')
-            st.write(live_analysis[0]['cashRatioTTM'])
-            st.markdown('Days of sales Outstanding')
-            st.write(live_analysis[0]['daysOfSalesOutstandingTTM'])
-            st.markdown('Days of Inventory Outstanding')
-            st.write(live_analysis[0]['daysOfInventoryOutstandingTTM'])
-            st.markdown('Days of Payable Outstanding')
-            st.write(live_analysis[0]['daysOfPayablesOutstandingTTM'])
-            st.markdown('Operating Cycle')
-            st.write(live_analysis[0]['operatingCycleTTM'])
-            st.markdown('Cash Conversion Cycle')
-            st.write(live_analysis[0]['cashConversionCycleTTM'])
-            st.markdown('Gross Profit Margin')
-            st.write(live_analysis[0]['grossProfitMarginTTM'])
-            st.markdown('Operating Profit Margin')
-            st.write(live_analysis[0]['operatingProfitMarginTTM'])
-            st.markdown('Pretax Profit Margin')
-            st.write(live_analysis[0]['pretaxProfitMarginTTM'])
-            st.markdown('Net Profit Margin')
-            st.write(live_analysis[0]['netProfitMarginTTM'])
-            st.markdown('Effective Tax Rate')
-            st.write(live_analysis[0]['effectiveTaxRateTTM'])
-            st.markdown('Return on Assets')
-            st.write(live_analysis[0]['returnOnAssetsTTM'])
-            st.markdown('Return on Equity')
-            st.write(live_analysis[0]['returnOnEquityTTM'])
-            st.markdown('Return on Capital Employed')
-            st.write(live_analysis[0]['returnOnCapitalEmployedTTM'])
-            st.markdown('Net Income Per EBT')
-            st.write(live_analysis[0]['netIncomePerEBTTTM'])
-            st.markdown('EBT per EBIT')
-            st.write(live_analysis[0]['ebtPerEbitTTM'])
-            st.markdown('EBIT Per Revenue')
-            st.write(live_analysis[0]['ebitPerRevenueTTM'])
-            st.markdown('Debt Ratio')
-            st.write(live_analysis[0]['debtRatioTTM'])
-            st.markdown('Debt Equity Ratio')
-            st.write(live_analysis[0]['debtEquityRatioTTM'])
-            st.markdown('long Term Debt To Capitalization')
-            st.write(live_analysis[0]['longTermDebtToCapitalizationTTM'])
-            st.markdown('Total Debt To Capitalization')
-            st.write(live_analysis[0]['totalDebtToCapitalizationTTM'])
-            st.markdown('Interest Coverage')
-            st.write(live_analysis[0]['interestCoverageTTM'])
-            st.markdown('CashFlow To Debt Ratio')
-            st.write(live_analysis[0]['cashFlowToDebtRatioTTM'])
-            st.markdown('Company Equity Multiplier')
-            st.write(live_analysis[0]['companyEquityMultiplierTTM'])
-            st.markdown('ReceivablesTurnover')
-            st.write(live_analysis[0]['receivablesTurnoverTTM'])
-            st.markdown('Payables Turnover')
-            st.write(live_analysis[0]['payablesTurnoverTTM'])
-            st.markdown('Inventory Turnover')
-            st.write(live_analysis[0]['inventoryTurnoverTTM'])
-            st.markdown('FixedAsset Turnover')
-            st.write(live_analysis[0]['fixedAssetTurnoverTTM'])
-            st.markdown('Asset Turnover')
-            st.write(live_analysis[0]['assetTurnoverTTM'])
-            st.markdown('Operating Cash Flow Per Share')
-            st.write(live_analysis[0]['operatingCashFlowPerShareTTM'])
-            st.markdown('Free Cash Flow Per Share')
-            st.write(live_analysis[0]['freeCashFlowPerShareTTM'])
-            st.markdown('Cash Per Share')
-            st.write(live_analysis[0]['cashPerShareTTM'])
-            st.markdown('Operating Cash Flow Sales Ratio')
-            st.write(live_analysis[0]['operatingCashFlowSalesRatioTTM'])
-            st.markdown('Free Cash Flow Operating Cash Flow Ratio')
-            st.write(live_analysis[0]['freeCashFlowOperatingCashFlowRatioTTM'])
-            st.markdown('CashFlow Coverage Ratios')
-            st.write(live_analysis[0]['cashFlowCoverageRatiosTTM'])
-            st.markdown('Short Term Coverage Ratios')
-            st.write(live_analysis[0]['shortTermCoverageRatiosTTM'])
-            st.markdown('Capital Expenditure Coverage Ratio')
-            st.write(live_analysis[0]['capitalExpenditureCoverageRatioTTM'])
-            st.markdown('Dividend Paid And Capex Coverage Ratio')
-            st.write(live_analysis[0]['dividendPaidAndCapexCoverageRatioTTM'])
-            st.markdown('Price Book Value Ratio')
-            st.write(live_analysis[0]['priceBookValueRatioTTM'])
-            st.markdown('Price To Book Ratio')
-            st.write(live_analysis[0]['priceToBookRatioTTM'])
-            st.markdown('Price To Sales Ratio')
-            st.write(live_analysis[0]['priceToSalesRatioTTM'])
-            st.markdown('Price Earnings Ratio')
-            st.write(live_analysis[0]['priceEarningsRatioTTM'])
-            st.markdown('Price To Free Cash Flows Ratio')
-            st.write(live_analysis[0]['priceToFreeCashFlowsRatioTTM'])
-            st.markdown('Price To Operating Cash Flows Ratio')
-            st.write(live_analysis[0]['priceToOperatingCashFlowsRatioTTM'])
-            st.markdown('price Cash Flow Ratio')
-            st.write(live_analysis[0]['priceCashFlowRatioTTM'])
-            st.markdown('Rrice Earnings To Growth Ratio')
-            st.write(live_analysis[0]['priceEarningsToGrowthRatioTTM'])
-            st.markdown('Price Sales Ratio')
-            st.write(live_analysis[0]['priceSalesRatioTTM'])
-            st.markdown('Dividend Yield')
-            st.write(live_analysis[0]['dividendYieldTTM'])
-            st.markdown('Enterprise Value Multiple')
-            st.write(live_analysis[0]['enterpriseValueMultipleTTM'])
-            st.markdown('Price Fair Value')
-            st.write(live_analysis[0]['priceFairValueTTM'])
-            st.markdown('dividendPerShare')
-            st.write(live_analysis[0]['dividendPerShareTTM'])
-
-if tabs == 'Cryptocurrency':
-    selected2 = option_menu(None, ["Overview", "Cryptocurrency Info"],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
-    if selected2 == "Overview":
-        st.subheader('Coins')
-        listdisc = openbb.crypto.disc.coins()
-        st._arrow_dataframe(listdisc)
-
-        # Trending coins on coingecko
-        st.subheader('Trending Coins')
-        trendlist = openbb.crypto.disc.trending()
-        st._arrow_dataframe(trendlist)
-
-        # Losers
-        st.subheader('Lossers')
-        losslist = openbb.crypto.disc.losers(interval='1y')
-        st._arrow_dataframe(losslist)
-
-        swapsde = openbb.crypto.defi.vaults(chain=True, protocol=True, kind=True, ascend=True, sortby="apy")
-        st._arrow_dataframe(swapsde)
-
-        nwl = openbb.crypto.defi.newsletters()
-        st._arrow_dataframe(nwl)
-
-        # terra blockchain staking ratio history
-        pool = openbb.crypto.defi.sratio(limit=400)
-        st._arrow_dataframe(pool)
-
-        # terra blockchain staking returns history
-        sreturn = openbb.crypto.defi.sreturn(limit=400)
-        st._arrow_dataframe(sreturn)
-
-    if selected2 == "Cryptocurrency Info":
-        cryptosymbol = st.text_input('Enter Tickers of the companies', 'BTC-USD')  # To get data from yahoo finance
-        tickers = Ticker(f'{cryptosymbol}', asynchronous=True)
-        assetprofile = Ticker(f'{cryptosymbol}', formatted=True).asset_profile
-        st.header(assetprofile[f"{cryptosymbol}"]['name'])
-        st.write(assetprofile[f"{cryptosymbol}"]['description'])
-        cdf = tickers.history(period='max')
-        st._arrow_dataframe(cdf)
-
-        text = cryptosymbol
-        head, sep, tail = text.partition('-')
-        updatedsymbol = head
-        trades_ethusdt = openbb.crypto.dd.trades(exchange_id='binance', symbol=f'{updatedsymbol}', to_symbol='USDT')
-        st._arrow_dataframe(trades_ethusdt)
-
-if tabs == 'News & Analysis':
-    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Startup Watch"],
-                            menu_icon="cast", default_index=0, orientation="horizontal")
-
-    if selected1 == 'Market Crunch':
-        finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
-        news = finnhub_client.general_news('general', min_id=0)
-        for news in news:
-            st.header(news['headline'])
-            st.write(news['category'])
-            posix_time = (news['datetime'])
-            st.text(datetime.utcfromtimestamp(posix_time).strftime('%Y-%m-%dT%H:%M:%SZ'))
-            st.image(news['image'])
-            st.markdown(news['summary'])
-            st.write(news['url'])
-
-    if selected1 == 'Ticker-News':
-        nsymbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
-        url = f"https://api.polygon.io/v2/reference/news?limit=100&sort=published_utc&ticker={nsymbol}&published_utc.gte=2021-04-26&apiKey=l7CZdzU2ElYhYaDCj5QQeyVUxMgr7UPZ"
-        r = requests.get(url)
-        data = r.json()
-        for results in data['results']:
-            st.header(results['title'])
-            st.write(results['author'])
-            st.write(results['published_utc'])
-            st.image(results['image_url'])
-            st.write(results['article_url'])
-
-    if selected1 == 'Startup Watch':
-        jig = st.text_input("Topic", value='Startup', max_chars=15)
-        st.write("(In topic area you can enter the name of any startup and it will fetch all the news eg Zomato ,Zepto ,etc)")
-        url = ('https://newsapi.org/v2/everything?'
-               f'q={jig}&'
-               'domains= indiatimes.com,vccircle.com,techcrunch.com,moneycontrol.com,business-standard.com,livemint.com&'
-               'apiKey=e9281231a2bb483caaeccce82d9a235d')
-
-        response = requests.get(url)
-        articles = json.loads(response.text)['articles']
-        for articles in articles:
-            st.header(articles["title"])
-            st.write(articles["publishedAt"], articles["author"])
-            st.markdown(articles["description"])
-            st.image(articles["urlToImage"])
-            with st.expander('Expand'):
-                st.write(articles["content"])
-
+    st.subheader('**Stocker......**')
+    st.markdown(
+        'Stocker is a comprehensive tool that offers a wide range of features related to finance and investments. '
+        'It covers various components, including stocks, economy, and cryptocurrencies, providing users with extensive'
+        ' insights into these areas. With its fundamental and technical analysis capabilities, users can access valuable '
+        'information about a specific ticker or company. Moreover, the integration of Prophet allows the app to predict '
+        'future stock prices and cryptocurrency prices, enhancing decision-making abilities. One of the standout features '
+        'of app is its ability to analyze and predict various parameters for user-inputted portfolios, providing personalized '
+        'and tailored investment recommendations. Overall, application serves as a one-stop solution, offering '
+        'comprehensive financial information, predictions, and portfolio analysis in an interactive and user-friendly manner.')
 
 if tabs == 'Market Overview':
     indicies, stocks, cryptoc, futures, forex = st.tabs(["Indicies", "stocks", "cryptoc", "futures", "forex"])
@@ -603,7 +250,7 @@ if tabs == 'Market Overview':
         st._arrow_dataframe(up)
 
         st.subheader('Stocks ordered in descending order by intraday trade volume. [Source: Yahoo Finance]')
-        activest =openbb.stocks.disc.active()
+        activest = openbb.stocks.disc.active()
         st._arrow_dataframe(activest)
 
         st.subheader('Small cap stocks with earnings growth rates better than 25%')
@@ -611,21 +258,12 @@ if tabs == 'Market Overview':
         st._arrow_dataframe(smallcap)
 
         st.subheader('stocks with earnings growth rates better than 25% and relatively low PE and PEG ratios')
-        ug= openbb.stocks.disc.ugs()
+        ug = openbb.stocks.disc.ugs()
         st._arrow_dataframe(ug)
 
-
         st.subheader("Trending articles")
-        tra = openbb.stocks.disc.trending(limit = 50)
+        tra = openbb.stocks.disc.trending(limit=50)
         st._arrow_table(tra)
-
-
-
-
-
-
-
-
     with cryptoc:
         components.html(
             """
@@ -828,7 +466,6 @@ if tabs == 'Market Overview':
             height=1250, width=2000
         )
 
-
     if tabs == 'Social Sentiments':
         selected1 = option_menu(None, ["StockTwits", "Twitter", "Reddit"],
                                 menu_icon="cast", default_index=0, orientation="horizontal")
@@ -877,190 +514,587 @@ if tabs == 'Market Overview':
                     st.write(cashtags)
                     st.write(submission.title)
 
-    if tabs == 'ML-Forecast':
-        selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
-                                menu_icon="cast", default_index=0, orientation="horizontal")
-        if selected3 == 'Stocks':
-            START = st.date_input('Start Date', date(2011, 1, 1))
-            END = st.date_input('End date')
-            stockslist = pd.read_csv(
-                'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-                error_bad_lines=False)
-            selected_stock = st.selectbox('Select the stock for prediction', stockslist)
+if tabs == 'Stocks':
+    selected1 = option_menu(None, ["Ticker-Info", "Fundamentals"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
+    if selected1 == 'Ticker-Info':
+        country = st.selectbox("Select the Country", ("USA", "India"))
+        if country == "USA":
+            tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
+            tickerData = yf.Ticker(tickerSymbol)
+            tick = pd.DataFrame(tickerData.history(period="max"))
 
-            n_years = st.slider('Years of prediction:', 1, 5)
-            period = n_years * 365
+            col1, col2 = st.columns(2)
+            with col1:
+                url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={tickerSymbol}&apikey=8C6QMW4YWGS0X7E2'
+                r = requests.get(url)
+                dataaplfa = r.json()
+                st.header(dataaplfa['Name'])
+                st.write(dataaplfa['Description'])
+                st.markdown('**Exchange**')
+                st.write(dataaplfa['Exchange'])
+                st.markdown('**Sector**')
+                st.write(dataaplfa['Sector'])
+                st.markdown('**Industry**')
+                st.write(dataaplfa['Industry'])
+                bbs = openbb.stocks.ba.bullbear(symbol=tickerSymbol)
+                st.write(f"Bull/Bear sentiment = {bbs}")
+            with col2:
+                components.html(
+                    f"""
+                        <!-- TradingView Widget BEGIN -->
+                        <div class="tradingview-widget-container">
+                          <div id="tradingview_c0b7d"></div>
+                          <div class="tradingview-widget-copyright"><a href="https://in.tradingview.com/symbols/{tickerSymbol}/" rel="noopener" target="_blank"><span class="blue-text"></span></a></div>
+                          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                          <script type="text/javascript">
+                          new TradingView.MediumWidget(
+                          {{
+                          "symbols": [
+                            [
+                              "{tickerSymbol}",
+                            ]
+                          ],
+                            "chartOnly": true,
+                                  "width": 800,
+                                  "height": 500,
+                                  "locale": "in",
+                                  "colorTheme": "dark",
+                                  "isTransparent": true,
+                                  "autosize": false,
+                                  "showVolume": false,
+                                  "hideDateRanges": false,
+                                  "scalePosition": "right",
+                                  "scaleMode": "Normal",
+                                  "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                                  "noTimeScale": false,
+                                  "valuesTracking": "1",
+                                  "chartType": "area",
+                                  "fontColor": "#787b86",
+                                  "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                                  "backgroundColor": "rgba(0, 0, 0, 1)",
+                                  "lineColor": "rgb(253,128,0)",
+                                  "topColor": "rgba(245, 124, 0, 0.3)",
+                                  "bottomColor": "rgba(41, 98, 255, 0)",
+                                  "lineWidth": 3,
+                                  "container_id": "tradingview_c0b7d"
+                        }}
+                          );
+                          </script>
+                        </div>
+                    """,
+                    height=610, width=980,
+                )
 
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.subheader('**Ticker data**')
+                st._legacy_dataframe(tick)
 
-            @st.cache
-            def load_data(ticker):
-                data = yf.download(ticker, START, END)
-                data.reset_index(inplace=True)
-                return data
+            with col2:
+                st.subheader(f"Oerview of {tickerSymbol}")
+                overview = openbb.stocks.fa.overview(symbol=tickerSymbol, source="YahooFinance")
+                st._legacy_dataframe(overview)
 
+            with col3:
+                st.subheader('Major Holders')
+                major_holders = tickerData.major_holders
+                st._legacy_table(major_holders)
 
-            data_load_state = st.text('Loading data...')
-            data = load_data(selected_stock)
-            data_load_state.text('Loading data... done!')
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader('Mutual Funds Holders')
+                mf_holders = tickerData.mutualfund_holders
+                st._arrow_dataframe(mf_holders)
+            with col2:
+                st.subheader('Institutional Holders')
+                institutional_holders = tickerData.institutional_holders
+                st._arrow_dataframe(institutional_holders)
 
-            st.subheader('Raw data')
-            st.write(data.tail())
+            # sec fillings
+            st.subheader("SEC Fillings")
+            finfill = openbb.stocks.fa.sec(symbol=tickerSymbol)
+            st.write(finfill)
 
+            col1, col2 = st.columns(2)
+            with col1:
+                # Government trades from openbb
+                st.subheader("Congress Trading")
+                st.write(openbb.stocks.gov.gtrades(symbol=tickerSymbol, gov_type='congress'))
+            with col2:
+                st.subheader("Historical quarterly government contracts")
+                histgov = openbb.stocks.gov.histcont(symbol=tickerSymbol)
+                st._legacy_dataframe(histgov)
 
-            def plot_raw_data():
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
-                fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
-                fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+            # contracts
+            st.subheader('Contracts')
+            contracts = openbb.stocks.gov.contracts(tickerSymbol)
+            st.write(contracts)
+
+            st.subheader(f"Lobbying effects by {tickerSymbol}")
+            lobby = openbb.stocks.gov.lobbying(tickerSymbol)
+            st.write(lobby)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                # Bollinger bands
+                st.header('**Bollinger Bands**')
+                qf = cf.QuantFig(tick, title='First Quant Figure', legend='top', name='GS')
+                qf.add_bollinger_bands()
+                fig = qf.iplot(asFigure=True)
                 st.plotly_chart(fig)
+            with col2:
+                # Technical Analysis Report from Finviz.brain
+                st.subheader("Technical Analysis Summary")
+                report = openbb.stocks.ta.summary(tickerSymbol)
+                st.write(report)
 
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("Analyst Price Target")
+                st.markdown('(By Insider Business)')
+                abi = openbb.stocks.fa.pt(symbol=tickerSymbol)
+                st.write(abi)
 
-            plot_raw_data()
+            with col2:
+                st.subheader('Revenue Estimates')
+                st.markdown("(By Seeking alpha)")
+                aski = openbb.stocks.fa.revfc(ticker=tickerSymbol)
+                st.write(aski)
 
-            df_train = data[['Date', 'Close']]
-            df_train = df_train.rename(columns={"Date": "ds", "Close": "y"})
+            st.subheader("Suppliers At a Glance")
+            supp = openbb.stocks.fa.supplier(symbol=tickerSymbol)
+            st.dataframe(supp)
 
-            m = Prophet()
-            m.fit(df_train)
-            future = m.make_future_dataframe(periods=period)
-            forecast = m.predict(future)
+            st.subheader('Splits Events')
+            revsp = openbb.stocks.fa.splits(symbol=tickerSymbol)
+            st.write(revsp)
 
-            st.subheader('Forecast data')
-            st.write(forecast.tail())
+            st.subheader(f"Insider Activity on {tickerSymbol}")
+            ins = openbb.stocks.ins.stats(symbol=tickerSymbol)
+            st._legacy_dataframe(ins)
 
-            st.write(f'Forecast plot for {n_years} years')
-            fig1 = plot_plotly(m, forecast)
-            st.plotly_chart(fig1)
+        if country == "India":
+            # Created using Yahooquery library
+            tickerSymbol = st.text_input('Enter Tickers of the companies', 'SBIN.NS')
+            infodata = Ticker(f'{tickerSymbol}')
+            infooutput = infodata.asset_profile
+            st.markdown('**Country**')
+            st.write(infooutput[f"{tickerSymbol}"]["country"])
+            st.markdown('Description')
+            st.write(infooutput[f"{tickerSymbol}"]["longBusinessSummary"])
+            st.markdown('**Industry**')
+            st.write(infooutput[f"{tickerSymbol}"]["industry"])
+            st.markdown('**Sector**')
+            st.write(infooutput[f"{tickerSymbol}"]["sector"])
 
-            st.write("Forecast components")
-            fig2 = m.plot_components(forecast)
-            st.write(fig2)
+            # Running on yfinance library
+            tickerData = yf.Ticker(tickerSymbol)
+            tick = pd.DataFrame(tickerData.history(period="max"))
+            st._arrow_dataframe(tick)
 
-        if selected3 == 'Cryptocurrency':
-            st.markdown(
-                """
-        <style>
-        .big-font {
-            fontWeight: bold;
-            font-size:22px !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+    if selected1 == 'Fundamentals':
+        tickerSymbol = st.text_input('Enter Tickers of the companies', 'AAPL')
+        BalanceSheet, IncomeStatement, CashFlowStatement, Analysis = st.tabs(
+            ["Balance Sheet", "Income Statement", "Cash-Flow", 'Analyze Statements'])
+        with BalanceSheet:
+            bsheet = openbb.stocks.fa.balance(symbol=tickerSymbol, quarterly=False, ratios=False, source="YahooFinance",
+                                              limit=10)
+            st.subheader('**Balance Sheet**')
+            st._legacy_table(bsheet)
 
-        ### Select ticker & number of days to predict on
-        selected_ticker = st.text_input("Select a cryptocurrency", "BTC")
-        period = int(
-            st.number_input('Number of days to predict:', min_value=0, max_value=1000000, value=365, step=1))
-        training_size = int(
-            st.number_input('Training set (%) size:', min_value=10, max_value=100, value=100, step=5)) / 100
+        with IncomeStatement:
+            incomest = openbb.stocks.fa.income(symbol=tickerSymbol, quarterly=False, ratios=False,
+                                               source="YahooFinance", limit=10)
+            st.subheader('**Income Statement**')
+            st._legacy_table(incomest)
 
+        with CashFlowStatement:
+            cashf = openbb.stocks.fa.cash(symbol=tickerSymbol, quarterly=False, ratios=False, source="YahooFinance",
+                                          limit=10)
+            st.subheader('**Cash Flow**')
+            st._legacy_table(cashf)
 
-        ### Initialise scraper without time interval
-        @st.cache
-        def load_data(selected_ticker):
-            init_scraper = CmcScraper(selected_ticker)
-            df = init_scraper.get_dataframe()
-            min_date = pd.to_datetime(min(df['Date']))
-            max_date = pd.to_datetime(max(df['Date']))
-            return min_date, max_date
+        with Analysis:
+            st.subheader('Analysis of SEC Fillings using ML')
+            faa = openbb.stocks.fa.analysis(symbol=tickerSymbol)
+            st.write(faa)
 
+            st.subheader('Fraud ratios based on fundamentals')
+            fraudscore = openbb.stocks.fa.fraud(symbol=tickerSymbol, detail=True)
+            st.write(fraudscore)
 
-        data_load_state = st.sidebar.text('Loading data...')
-        min_date, max_date = load_data(selected_ticker)
-        data_load_state.text('Loading data... done!')
+            st.subheader('Ratio Analysis')
+            url23 = requests.get(
+                f'https://financialmodelingprep.com/api/v3/ratios-ttm/{tickerSymbol}?apikey=7062ab81fcd13c8807496957c0208206')
+            live_analysis = url23.json()
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('P/E ratio')
+                st.write(live_analysis[0]['peRatioTTM'])
+            with col2:
+                st.markdown('PE/G Ratio ')
+                st.write(live_analysis[0]['pegRatioTTM'])
+            with col3:
+                st.markdown('Payout Ratio')
+                st.write(live_analysis[0]['payoutRatioTTM'])
+            with col4:
+                st.markdown('Current ratio')
+                st.write(live_analysis[0]['currentRatioTTM'])
+            with col5:
+                st.markdown('Quick ratio')
+                st.write(live_analysis[0]['quickRatioTTM'])
 
-        ### Select date range
-        date_range = st.selectbox("Select the timeframe to train the model on:",
-                                  options=["All available data", "Specific date range"])
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write(' ')
 
-        if date_range == "All available data":
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Cash ratio')
+                st.write(live_analysis[0]['cashRatioTTM'])
+            with col2:
+                st.markdown('Days of sales Outstanding')
+                st.write(live_analysis[0]['daysOfSalesOutstandingTTM'])
+            with col3:
+                st.markdown('Days of Inventory Outstanding')
+                st.write(live_analysis[0]['daysOfInventoryOutstandingTTM'])
+            with col4:
+                st.markdown('Days of Payable Outstanding')
+                st.write(live_analysis[0]['daysOfPayablesOutstandingTTM'])
+            with col5:
+                st.markdown('Operating Cycle')
+                st.write(live_analysis[0]['operatingCycleTTM'])
 
-            ### Initialise scraper without time interval
-            scraper = CmcScraper(selected_ticker)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
-        elif date_range == "Specific date range":
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Cash Conversion Cycle')
+                st.write(live_analysis[0]['cashConversionCycleTTM'])
+            with col2:
+                st.markdown('Gross Profit Margin')
+                st.write(live_analysis[0]['grossProfitMarginTTM'])
+            with col3:
+                st.markdown('Operating Profit Margin')
+                st.write(live_analysis[0]['operatingProfitMarginTTM'])
+            with col4:
+                st.markdown('Pretax Profit Margin')
+                st.write(live_analysis[0]['pretaxProfitMarginTTM'])
+            with col5:
+                st.markdown('Net Profit Margin')
+                st.write(live_analysis[0]['netProfitMarginTTM'])
 
-            ### Initialise scraper with time interval
-            start_date = st.date_input('Select start date:', min_value=min_date, max_value=max_date,
-                                       value=min_date)
-            end_date = st.date_input('Select end date:', min_value=min_date, max_value=max_date, value=max_date)
-            scraper = CmcScraper(selected_ticker, str(start_date.strftime("%d-%m-%Y")),
-                                 str(end_date.strftime("%d-%m-%Y")))
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
-        ### Pandas dataFrame for the same data
-        data = scraper.get_dataframe()
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Effective Tax Rate')
+                st.write(live_analysis[0]['effectiveTaxRateTTM'])
+            with col2:
+                st.markdown('Return on Assets')
+                st.write(live_analysis[0]['returnOnAssetsTTM'])
+            with col3:
+                st.markdown('Return on Equity')
+                st.write(live_analysis[0]['returnOnEquityTTM'])
+            with col4:
+                st.markdown('Return on Capital Employed')
+                st.write(live_analysis[0]['returnOnCapitalEmployedTTM'])
+            with col5:
+                st.markdown('Net Income Per EBT')
+                st.write(live_analysis[0]['netIncomePerEBTTTM'])
 
-        st.subheader('Raw data')
-        st.write(data.head())
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('EBT per EBIT')
+                st.write(live_analysis[0]['ebtPerEbitTTM'])
+            with col2:
+                st.markdown('EBIT Per Revenue')
+                st.write(live_analysis[0]['ebitPerRevenueTTM'])
+            with col3:
+                st.markdown('Debt Ratio')
+                st.write(live_analysis[0]['debtRatioTTM'])
+            with col4:
+                st.markdown('Debt Equity Ratio')
+                st.write(live_analysis[0]['debtEquityRatioTTM'])
+            with col5:
+                st.markdown('long Term Debt To Capitalization')
+                st.write(live_analysis[0]['longTermDebtToCapitalizationTTM'])
 
-        def plot_raw_data():
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="Close"))
-            fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
-            st.plotly_chart(fig)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
+            with col1:
+                st.markdown('Total Debt To Capitalization')
+                st.write(live_analysis[0]['totalDebtToCapitalizationTTM'])
+            with col2:
+                st.markdown('Interest Coverage')
+                st.write(live_analysis[0]['interestCoverageTTM'])
+            with col3:
+                st.markdown('CashFlow To Debt Ratio')
+                st.write(live_analysis[0]['cashFlowToDebtRatioTTM'])
+            with col4:
+                st.markdown('Company Equity Multiplier')
+                st.write(live_analysis[0]['companyEquityMultiplierTTM'])
+            with col5:
+                st.markdown('ReceivablesTurnover')
+                st.write(live_analysis[0]['receivablesTurnoverTTM'])
+            with col6:
+                st.markdown('Payables Turnover')
+                st.write(live_analysis[0]['payablesTurnoverTTM'])
 
-        def plot_raw_data_log():
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="Close"))
-            fig.update_yaxes(type="log")
-            fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
-            st.plotly_chart(fig)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Inventory Turnover')
+                st.write(live_analysis[0]['inventoryTurnoverTTM'])
+            with col2:
+                st.markdown('FixedAsset Turnover')
+                st.write(live_analysis[0]['fixedAssetTurnoverTTM'])
+            with col3:
+                st.markdown('Asset Turnover')
+                st.write(live_analysis[0]['assetTurnoverTTM'])
+            with col4:
+                st.markdown('Operating Cash Flow Per Share')
+                st.write(live_analysis[0]['operatingCashFlowPerShareTTM'])
+            with col5:
+                st.markdown('Free Cash Flow Per Share')
+                st.write(live_analysis[0]['freeCashFlowPerShareTTM'])
 
-        ### Plot (log) data
-        plot_log = st.checkbox("Plot log scale")
-        if plot_log:
-            plot_raw_data_log()
-        else:
-            plot_raw_data()
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
-        if st.button("Predict"):
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Cash Per Share')
+                st.write(live_analysis[0]['cashPerShareTTM'])
+            with col2:
+                st.markdown('Operating Cash Flow Sales Ratio')
+                st.write(live_analysis[0]['operatingCashFlowSalesRatioTTM'])
+            with col3:
+                st.markdown('Free Cash Flow Operating Cash Flow Ratio')
+                st.write(live_analysis[0]['freeCashFlowOperatingCashFlowRatioTTM'])
+            with col4:
+                st.markdown('CashFlow Coverage Ratios')
+                st.write(live_analysis[0]['cashFlowCoverageRatiosTTM'])
+            with col5:
+                st.markdown('Short Term Coverage Ratios')
+                st.write(live_analysis[0]['shortTermCoverageRatiosTTM'])
 
-            df_train = data[['Date', 'Close']]
-            df_train = df_train.rename(columns={"Date": "ds", "Close": "y"})
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
-            ### Create Prophet model
-            m = Prophet(
-                changepoint_range=training_size,  # 0.8
-                yearly_seasonality='auto',
-                weekly_seasonality='auto',
-                daily_seasonality=False,
-                seasonality_mode='multiplicative',  # multiplicative/additive
-                changepoint_prior_scale=0.05
-            )
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Capital Expenditure Coverage Ratio')
+                st.write(live_analysis[0]['capitalExpenditureCoverageRatioTTM'])
+            with col2:
+                st.markdown('Dividend Paid And Capex Coverage Ratio')
+                st.write(live_analysis[0]['dividendPaidAndCapexCoverageRatioTTM'])
+            with col3:
+                st.markdown('Price Book Value Ratio')
+                st.write(live_analysis[0]['priceBookValueRatioTTM'])
+            with col4:
+                st.markdown('Price To Book Ratio')
+                st.write(live_analysis[0]['priceToBookRatioTTM'])
+            with col5:
+                st.markdown('Price To Sales Ratio')
+                st.write(live_analysis[0]['priceToSalesRatioTTM'])
 
-            ### Add (additive) regressor
-            for col in df_train.columns:
-                if col not in ["ds", "y"]:
-                    m.add_regressor(col, mode="additive")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
-            m.fit(df_train)
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Price Earnings Ratio')
+                st.write(live_analysis[0]['priceEarningsRatioTTM'])
+            with col2:
+                st.markdown('Price To Free Cash Flows Ratio')
+                st.write(live_analysis[0]['priceToFreeCashFlowsRatioTTM'])
+            with col3:
+                st.markdown('Price To Operating Cash Flows Ratio')
+                st.write(live_analysis[0]['priceToOperatingCashFlowsRatioTTM'])
+            with col4:
+                st.markdown('price Cash Flow Ratio')
+                st.write(live_analysis[0]['priceCashFlowRatioTTM'])
+            with col5:
+                st.markdown('Rrice Earnings To Growth Ratio')
+                st.write(live_analysis[0]['priceEarningsToGrowthRatioTTM'])
 
-            ### Predict using the model
-            future = m.make_future_dataframe(periods=period)
-            forecast = m.predict(future)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(' ')
+            with col2:
+                st.write()
+            with col3:
+                st.write(' ')
 
-            ### Show and plot forecast
-            st.subheader('Forecast data')
-            st.write(forecast.head())
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.markdown('Price Sales Ratio')
+                st.write(live_analysis[0]['priceSalesRatioTTM'])
+            with col2:
+                st.markdown('Dividend Yield')
+                st.write(live_analysis[0]['dividendYieldTTM'])
+            with col3:
+                st.markdown('Enterprise Value Multiple')
+                st.write(live_analysis[0]['enterpriseValueMultipleTTM'])
+            with col4:
+                st.markdown('Price Fair Value')
+                st.write(live_analysis[0]['priceFairValueTTM'])
+            with col5:
+                st.markdown('dividendPerShare')
+                st.write(live_analysis[0]['dividendPerShareTTM'])
 
-            st.subheader(f'Forecast plot for {period} days')
-            fig1 = plot_plotly(m, forecast)
-            if plot_log:
-                fig1.update_yaxes(type="log")
-            st.plotly_chart(fig1)
+if tabs == 'Cryptocurrency':
+    selected2 = option_menu(None, ["Overview", "Cryptocurrency Info"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
+    if selected2 == "Overview":
+        st.subheader('Coins')
+        listdisc = openbb.crypto.disc.coins()
+        st._arrow_dataframe(listdisc)
 
-            st.subheader("Forecast components")
-            fig2 = m.plot_components(forecast)
-            st.write(fig2)
+        # Trending coins on coingecko
+        st.subheader('Trending Coins')
+        trendlist = openbb.crypto.disc.trending()
+        st._arrow_dataframe(trendlist)
+
+        # Losers
+        st.subheader('Lossers')
+        losslist = openbb.crypto.disc.losers(interval='1y')
+        st._arrow_dataframe(losslist)
+
+        swapsde = openbb.crypto.defi.vaults(chain=True, protocol=True, kind=True, ascend=True, sortby="apy")
+        st._arrow_dataframe(swapsde)
+
+        nwl = openbb.crypto.defi.newsletters()
+        st._arrow_dataframe(nwl)
+
+        # terra blockchain staking ratio history
+        pool = openbb.crypto.defi.sratio(limit=400)
+        st._arrow_dataframe(pool)
+
+        # terra blockchain staking returns history
+        sreturn = openbb.crypto.defi.sreturn(limit=400)
+        st._arrow_dataframe(sreturn)
+
+    if selected2 == "Cryptocurrency Info":
+        cryptosymbol = st.text_input('Enter Tickers of the companies', 'BTC-USD')  # To get data from yahoo finance
+        tickers = Ticker(f'{cryptosymbol}', asynchronous=True)
+        assetprofile = Ticker(f'{cryptosymbol}', formatted=True).asset_profile
+        st.header(assetprofile[f"{cryptosymbol}"]['name'])
+        st.write(assetprofile[f"{cryptosymbol}"]['description'])
+        cdf = tickers.history(period='max')
+        st._arrow_dataframe(cdf)
+
+        text = cryptosymbol
+        head, sep, tail = text.partition('-')
+        updatedsymbol = head
+        trades_ethusdt = openbb.crypto.dd.trades(exchange_id='binance', symbol=f'{updatedsymbol}', to_symbol='USDT')
+        st._arrow_dataframe(trades_ethusdt)
+
+if tabs == 'News & Analysis':
+    selected1 = option_menu(None, ["Market Crunch", "Ticker-News", "Startup Watch"],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
+
+    if selected1 == 'Market Crunch':
+        finnhub_client = finnhub.Client(api_key="c2tiabaad3i9opcku8r0")
+        news = finnhub_client.general_news('general', min_id=0)
+        for news in news:
+            st.header(news['headline'])
+            st.write(news['category'])
+            posix_time = (news['datetime'])
+            st.text(datetime.utcfromtimestamp(posix_time).strftime('%Y-%m-%dT%H:%M:%SZ'))
+            st.image(news['image'])
+            st.markdown(news['summary'])
+            st.write(news['url'])
+
+    if selected1 == 'Ticker-News':
+        nsymbol = st.text_input("Enter the Ticker", value='TSLA', max_chars=10)
+        url = f"https://api.polygon.io/v2/reference/news?limit=100&sort=published_utc&ticker={nsymbol}&published_utc.gte=2021-04-26&apiKey=l7CZdzU2ElYhYaDCj5QQeyVUxMgr7UPZ"
+        r = requests.get(url)
+        data = r.json()
+        for results in data['results']:
+            st.header(results['title'])
+            st.write(results['author'])
+            st.write(results['published_utc'])
+            st.image(results['image_url'])
+            st.write(results['article_url'])
+
+    if selected1 == 'Startup Watch':
+        jig = st.text_input("Topic", value='Startup', max_chars=15)
+        st.write(
+            "(In topic area you can enter the name of any startup and it will fetch all the news eg Zomato ,Zepto ,etc)")
+        url = ('https://newsapi.org/v2/everything?'
+               f'q={jig}&'
+               'domains= indiatimes.com,vccircle.com,techcrunch.com,moneycontrol.com,business-standard.com,livemint.com&'
+               'apiKey=e9281231a2bb483caaeccce82d9a235d')
+
+        response = requests.get(url)
+        articles = json.loads(response.text)['articles']
+        for articles in articles:
+            st.header(articles["title"])
+            st.write(articles["publishedAt"], articles["author"])
+            st.markdown(articles["description"])
+            st.image(articles["urlToImage"])
+            with st.expander('Expand'):
+                st.write(articles["content"])
 
 if tabs == 'Portfolio':
     symbol1list = pd.read_csv(
         'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
         error_bad_lines=False)
-    options = st.multiselect('Enter Tickers of the companies', symbol1list, ['SBIN.NS', 'ICICIBANK.NS'])
+    options = st.multiselect('Enter Tickers of the companies', symbol1list, ['GM', 'AAPL'])
 
     # Setting start and end date with the datetime module
     start_date = st.date_input("Start Date", date(2015, 1, 1))
@@ -1068,7 +1102,7 @@ if tabs == 'Portfolio':
 
     # Creating a empty Dataframe to store the data inside
     df = pd.DataFrame()
-    end = datetime.today().strftime("%Y-%m-%d")
+    end = date.today().strftime("%Y-%m-%d")
     for o in options:
         ticker = yf.Ticker(o)
         df[o] = ticker.history(start=start_date, end=end)["Close"]
@@ -1292,40 +1326,19 @@ if tabs == 'ETF & Mutual Funds':
         mf_equity_holdings = mf_data.info['equityHoldings']
         st.write(mf_equity_holdings)
 
-if tabs == 'Quant Report':
-    qs.extend_pandas()
-    qticker_list = pd.read_csv(
-        'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
-        error_bad_lines=False)
-    QtSymbol = st.selectbox('Stock ticker', qticker_list)
-    stock_returns = qs.utils.download_returns(QtSymbol)
-    sharpe = qs.stats.sharpe(stock_returns)
-    st.write(sharpe)
-    qs.reports.html(stock_returns, QtSymbol)
-    HtmlFile = open("tearsheet.html", 'r', encoding='utf-8')
-    source_code = HtmlFile.read()
-    print(source_code)
-    components.html(source_code)
-
 if tabs == 'Economy Crunch':
-    def color_negative_red(val):
-        if type(val) != 'str':
-            color = 'green' if val > 0 else 'red'
-            return f'color: {color}'
-
-
     st.title('openbb.economy')
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader('openbb.economy.currencies')
+        st.subheader('Currencies')
         data = openbb.economy.currencies()
         data[['Chng']] = data[['Chng']].apply(pd.to_numeric)
         st.dataframe(data.style.applymap(color_negative_red, subset=['Chng']))
 
     with col2:
-        st.subheader('openbb.economy.usbonds')
+        st.subheader('US bonds')
         data = openbb.economy.usbonds()
         data[data.columns[1]] = data[data.columns[1]].apply(pd.to_numeric)
         data[data.columns[2]] = data[data.columns[2]].apply(pd.to_numeric)
@@ -1338,12 +1351,12 @@ if tabs == 'Economy Crunch':
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader('openbb.economy.macro_countries')
+        st.subheader('Macro Countries')
         countries = pd.DataFrame.from_dict(openbb.economy.macro_countries(), orient='index')
         st.dataframe(countries)
 
     with col2:
-        st.subheader('openbb.economy.indices')
+        st.subheader('Indices')
         data = openbb.economy.indices()
 
         data[['Chg']] = data[['Chg']].apply(pd.to_numeric)
@@ -1351,11 +1364,411 @@ if tabs == 'Economy Crunch':
         st.dataframe(data.style.applymap(color_negative_red, subset=['Chg']))
 
     data = openbb.economy.treasury()
-    st.subheader('openbb.economy.treasury')
+    st.subheader('Treasury')
     theme = TerminalStyle("dark", "dark", "dark")
     st.line_chart(data=data, x=None, y=None, width=0, height=0, use_container_width=True)
 
-    st.subheader('openbb.economy.events')
+    st.subheader('Economic Events')
     data = openbb.economy.events()
     st.dataframe(data)
 
+if tabs == 'ML-Forecast':
+    selected3 = option_menu(None, ["Stocks", "Cryptocurrency", ],
+                            menu_icon="cast", default_index=0, orientation="horizontal")
+    if selected3 == 'Stocks':
+        START = st.date_input('Start Date', date(2011, 1, 1))
+        END = st.date_input('End date')
+        stockslist = pd.read_csv(
+            'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
+            error_bad_lines=False)
+        selected_stock = st.selectbox('Select the stock for prediction', stockslist)
+
+        n_years = st.slider('Years of prediction:', 1, 5)
+        period = n_years * 365
+
+
+        @st.cache_resource
+        def load_data(ticker):
+            data = yf.download(ticker, START, END)
+            data.reset_index(inplace=True)
+            return data
+
+
+        data_load_state = st.text('Loading data...')
+        data = load_data(selected_stock)
+        data_load_state.text('Loading data... done!')
+
+        st.subheader('Raw data')
+        st.write(data.tail())
+
+
+        def plot_raw_data():
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
+            fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
+            fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+            st.plotly_chart(fig)
+
+
+        plot_raw_data()
+
+        df_train = data[['Date', 'Close']]
+        df_train = df_train.rename(columns={"Date": "ds", "Close": "y"})
+
+        m = Prophet()
+        m.fit(df_train)
+        future = m.make_future_dataframe(periods=period)
+        forecast = m.predict(future)
+
+        st.subheader('Forecast data')
+        st.write(forecast.tail())
+
+        st.write(f'Forecast plot for {n_years} years')
+        fig1 = plot_plotly(m, forecast)
+        st.plotly_chart(fig1)
+
+        st.write("Forecast components")
+        fig2 = m.plot_components(forecast)
+        st.write(fig2)
+
+    if selected3 == 'Cryptocurrency':
+        st.markdown(
+            """
+        <style>
+        .big-font {
+            fontWeight: bold;
+            font-size:22px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    ### Select ticker & number of days to predict on
+    selected_ticker = st.text_input("Select a cryptocurrency", "BTC")
+    period = int(
+        st.number_input('Number of days to predict:', min_value=0, max_value=1000000, value=365, step=1))
+    training_size = int(
+        st.number_input('Training set (%) size:', min_value=10, max_value=100, value=100, step=5)) / 100
+
+
+    ### Initialise scraper without time interval
+    @st.cache_resource
+    def load_data(selected_ticker):
+        init_scraper = CmcScraper(selected_ticker)
+        df = init_scraper.get_dataframe()
+        min_date = pd.to_datetime(min(df['Date']))
+        max_date = pd.to_datetime(max(df['Date']))
+        return min_date, max_date
+
+
+    data_load_state = st.sidebar.text('Loading data...')
+    min_date, max_date = load_data(selected_ticker)
+    data_load_state.text('Loading data... done!')
+
+    ### Select date range
+    date_range = st.selectbox("Select the timeframe to train the model on:",
+                              options=["All available data", "Specific date range"])
+
+    if date_range == "All available data":
+
+        ### Initialise scraper without time interval
+        scraper = CmcScraper(selected_ticker)
+
+    elif date_range == "Specific date range":
+
+        ### Initialise scraper with time interval
+        start_date = st.date_input('Select start date:', min_value=min_date, max_value=max_date,
+                                   value=min_date)
+        end_date = st.date_input('Select end date:', min_value=min_date, max_value=max_date, value=max_date)
+        scraper = CmcScraper(selected_ticker, str(start_date.strftime("%d-%m-%Y")),
+                             str(end_date.strftime("%d-%m-%Y")))
+
+    ### Pandas dataFrame for the same data
+    data = scraper.get_dataframe()
+
+    st.subheader('Raw data')
+    st.write(data.head())
+
+
+    def plot_raw_data():
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="Close"))
+        fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+        st.plotly_chart(fig)
+
+
+    def plot_raw_data_log():
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="Close"))
+        fig.update_yaxes(type="log")
+        fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+        st.plotly_chart(fig)
+
+
+    ### Plot (log) data
+    plot_log = st.checkbox("Plot log scale")
+    if plot_log:
+        plot_raw_data_log()
+    else:
+        plot_raw_data()
+
+    if st.button("Predict"):
+
+        df_train = data[['Date', 'Close']]
+        df_train = df_train.rename(columns={"Date": "ds", "Close": "y"})
+
+        ### Create Prophet model
+        m = Prophet(
+            changepoint_range=training_size,  # 0.8
+            yearly_seasonality='auto',
+            weekly_seasonality='auto',
+            daily_seasonality=False,
+            seasonality_mode='multiplicative',  # multiplicative/additive
+            changepoint_prior_scale=0.05
+        )
+
+        ### Add (additive) regressor
+        for col in df_train.columns:
+            if col not in ["ds", "y"]:
+                m.add_regressor(col, mode="additive")
+
+        m.fit(df_train)
+
+        ### Predict using the model
+        future = m.make_future_dataframe(periods=period)
+        forecast = m.predict(future)
+
+        ### Show and plot forecast
+        st.subheader('Forecast data')
+        st.write(forecast.head())
+
+        st.subheader(f'Forecast plot for {period} days')
+        fig1 = plot_plotly(m, forecast)
+        if plot_log:
+            fig1.update_yaxes(type="log")
+        st.plotly_chart(fig1)
+
+        st.subheader("Forecast components")
+        fig2 = m.plot_components(forecast)
+        st.write(fig2)
+
+if tabs == 'Quant Report':
+    qs.extend_pandas()
+    qticker_list = pd.read_csv(
+        'https://raw.githubusercontent.com/nitinnkdz/s-and-p-500-companies/master/data/constituents_symbols.txt',
+        error_bad_lines=False)
+    QtSymbol = st.selectbox('Stock ticker', qticker_list)
+    stock = qs.utils.download_returns(QtSymbol)
+    fig = qs.plots.snapshot(stock, title=f'{QtSymbol} Performance', show=False)
+    st.write(fig)
+
+if tabs == 'Stocker.ai':
+    st.header("**:green[Stocker.ai]**")
+
+    openai.api_key = config.OPENAI_API_KEY
+
+    endd = date.today()
+
+
+    def get_company_news(company_symbol):
+
+        url = f"https://data.alpaca.markets/v1beta1/news?start=2018-01-01&end={endd}&symbols={company_symbol}&limit=50&sort=DESC&include_content=true"
+
+        headers = {
+            "accept": "application/json",
+            "APCA-API-KEY-ID": "PKFV2IY3IMSCWH7GIE8A",
+            "APCA-API-SECRET-KEY": "FH5BZLc8yK80OqNAhzznRnt6eUAbszQ9yjnwmKUq"
+        }
+
+        response = requests.get(url, headers=headers)
+        data = response.json()
+
+        return data.get('news')
+
+
+    def write_news_to_file(news, filename):
+        with open(filename, 'w') as file:
+            for news in news:
+                if news is not None:
+                    headline = news.get("headline")
+                    url = news.get('url')
+                    file.write(f"Headline: {headline}\n")
+                    file.write(f"Url: {url}\n")
+
+
+    def get_stock_info(company_symbol, period="1y"):
+        # Get the stock information
+        stock = yf.Ticker(company_symbol)
+
+        # Get historical market data
+        hist = stock.history(period=period)
+
+        # Convert the DataFrame to a string with a specific format
+        data_string = hist.to_string()
+
+        # Append the string to the "investment.txt" file
+        with open("investment.txt", "a") as file:
+            file.write(f"\nStock Evolution for {company_symbol}:\n")
+            file.write(data_string)
+            file.write("\n")
+
+        # Return the DataFrame
+        return hist
+
+
+    def get_financial_statements(ticker):
+        # Create a Ticker object
+        company = Ticker(ticker)
+
+        # Get financial data
+        balance_sheet = company.balance_sheet().to_string()
+        cash_flow = company.cash_flow(trailing=False).to_string()
+        income_statement = company.income_statement().to_string()
+        valuation_measures = str(company.valuation_measures)  # This one might already be a dictionary or string
+
+        # Write data to file
+        with open("investment.txt", "a") as file:
+            file.write("\nBalance Sheet\n")
+            file.write(balance_sheet)
+            file.write("\nCash Flow\n")
+            file.write(cash_flow)
+            file.write("\nIncome Statement\n")
+            file.write(income_statement)
+            file.write("\nValuation Measures\n")
+            file.write(valuation_measures)
+
+
+    def get_data(company_symbol, period="1y", filename="investment.txt"):
+        news = get_company_news(company_symbol)
+        if news:
+            write_news_to_file(news, filename)
+        else:
+            print("No news found.")
+
+        hist = get_stock_info(company_symbol)
+
+        get_financial_statements(company_symbol)
+
+        return hist
+
+
+    def financial_analyst(request):
+        print(f"Received request: {request}")
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0613",
+            messages=[{
+                "role":
+                    "user",
+                "content":
+                    f"Given the user request, what is the comapany name and the company stock ticker ?: {request}?"
+            }],
+            functions=[{
+                "name": "get_data",
+                "description":
+                    "Get financial data on a specific company for investment purposes",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "company_symbol": {
+                            "type":
+                                "string",
+                            "description":
+                                "the ticker of the stock of the company"
+                        },
+                        "period": {
+                            "type": "string",
+                            "description": "The period of analysis"
+                        },
+                        "filename": {
+                            "type": "string",
+                            "description": "the filename to store data"
+                        }
+                    },
+                    "required": ["company_symbol"],
+                },
+            }],
+            function_call={"name": "get_data"},
+        )
+
+        message = response["choices"][0]["message"]
+
+        if message.get("function_call"):
+            # Parse the arguments from a JSON string to a Python dictionary
+            arguments = json.loads(message["function_call"]["arguments"])
+            print(arguments)
+            company_symbol = arguments["company_symbol"]
+
+            # Parse the return value from a JSON string to a Python dictionary
+            hist = get_data(company_symbol)
+            print(hist)
+
+            with open("investment.txt", "r") as file:
+                content = file.read()[:14000]
+
+            second_response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo-16k",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": request
+                    },
+                    message,
+                    {
+                        "role": "system",
+                        "content": """write a detailled investment thesis to answer
+                          the user request as a html document. Provide numbers to justify
+                          your assertions, a lot ideally. Always provide
+                         a recommendation to buy the stock of the company
+                         or not given the information available."""
+                    },
+                    {
+                        "role": "assistant",
+                        "content": content,
+                    },
+                ],
+            )
+
+            return (second_response["choices"][0]["message"]["content"], hist)
+
+
+    def main():
+
+        company_symbol = st.text_input('Enter Ticker of the companies', 'AAPL')
+        analyze_button = st.button("Analyze")
+
+        if analyze_button:
+            if company_symbol:
+                progress_text = "Operation in progress. Please wait."
+                my_bar = st.progress(0, text=progress_text)
+
+                for percent_complete in range(100):
+                    time.sleep(0.1)
+                    my_bar.progress(percent_complete + 1, text=progress_text)
+
+                investment_thesis, hist = financial_analyst(company_symbol)
+
+                # Select 'Open' and 'Close' columns from the hist dataframe
+                hist_selected = hist[['Open', 'Close']]
+
+                # Create a new figure in matplotlib
+                fig, ax = plt.subplots()
+
+                # Plot the selected data
+                hist_selected.plot(kind='line', ax=ax)
+
+                # Set the title and labels
+                ax.set_title(f"{company_symbol} Stock Price")
+                ax.set_xlabel("Date")
+                ax.set_ylabel("Stock Price")
+
+                # Display the plot in Streamlit
+                st.pyplot(fig)
+
+                st.write("Investment Thesis / Recommendation:")
+
+                st.markdown(investment_thesis, unsafe_allow_html=True)
+            else:
+                st.write("Enter company symbol")
+
+
+    if __name__ == "__main__":
+        main()
